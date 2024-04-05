@@ -3,6 +3,7 @@ package chio
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"strconv"
 )
 
 type UserInfo struct {
@@ -110,16 +111,16 @@ type ScoreFrame struct {
 // ScoreFrame checksum calculation used in version b323
 func (sf *ScoreFrame) GetChecksum() string {
 	hash := md5.New().Sum([]byte(
-		string(sf.Time) +
+		strconv.FormatUint(uint64(sf.Time), 10) +
 			"false" + // "pass" ?
-			string(sf.Total300) +
-			string(sf.Total50) +
-			string(sf.TotalGeki) +
-			string(sf.TotalKatu) +
-			string(sf.TotalMiss) +
-			string(sf.CurrentCombo) +
-			string(sf.MaxCombo) +
-			string(sf.Hp),
+			strconv.Itoa(int(sf.Total300)) +
+			strconv.Itoa(int(sf.Total50)) +
+			strconv.Itoa(int(sf.TotalGeki)) +
+			strconv.Itoa(int(sf.TotalKatu)) +
+			strconv.Itoa(int(sf.TotalMiss)) +
+			strconv.Itoa(int(sf.CurrentCombo)) +
+			strconv.Itoa(int(sf.MaxCombo)) +
+			strconv.Itoa(int(sf.Hp)),
 	))
 
 	return hex.EncodeToString(hash[:])
