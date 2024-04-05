@@ -99,6 +99,15 @@ func writeIntList32(any interface{}, writer io.Writer) {
 	}
 }
 
+func writeStringList(any interface{}, writer io.Writer) {
+	list := any.([]string)
+	binary.Write(writer, binary.LittleEndian, uint32(len(list)))
+
+	for _, value := range list {
+		writeString(value, writer)
+	}
+}
+
 func compressBuffer(buffer *bytes.Buffer) {
 	zb := new(bytes.Buffer)
 	zw := gzip.NewWriter(zb)
@@ -114,6 +123,10 @@ func compressData(data []byte) []byte {
 	zw.Write(data)
 	zw.Close()
 	return zb.Bytes()
+}
+
+func readNothing(reader io.Reader) any {
+	return nil
 }
 
 func readInt8(reader io.Reader) int8 {
@@ -217,6 +230,17 @@ func readIntList32(reader io.Reader) []int32 {
 
 	for i := 0; i < int(length); i++ {
 		list[i] = readInt32(reader)
+	}
+
+	return list
+}
+
+func readStringList(reader io.Reader) []string {
+	length := readUint32(reader)
+	list := make([]string, length)
+
+	for i := 0; i < int(length); i++ {
+		list[i] = readString(reader)
 	}
 
 	return list
