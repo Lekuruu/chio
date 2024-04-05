@@ -147,7 +147,7 @@ type Match struct {
 
 type MatchSlot struct {
 	UserId int32
-	Status uint16
+	Status uint8
 	Team   uint8
 	Mods   uint32
 }
