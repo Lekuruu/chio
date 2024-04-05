@@ -19,6 +19,7 @@ const (
 	OsuStartSpectating             uint16 = 16
 	OsuStopSpectating              uint16 = 17
 	OsuSpectateFrames              uint16 = 18
+	BanchoVersionUpdate            uint16 = 19
 	OsuErrorReport                 uint16 = 20
 	OsuCantSpectate                uint16 = 21
 	BanchoSpectatorCantSpectate    uint16 = 22
