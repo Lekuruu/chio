@@ -99,7 +99,7 @@ func writeIntList32(any interface{}, writer io.Writer) {
 	}
 }
 
-func compressBuffer(buffer bytes.Buffer) {
+func compressBuffer(buffer *bytes.Buffer) {
 	zb := new(bytes.Buffer)
 	zw := gzip.NewWriter(zb)
 	zw.Write(buffer.Bytes())

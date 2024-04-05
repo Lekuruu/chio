@@ -86,7 +86,7 @@ func Encode[T any](packetId uint16, packetData T, version uint32) ([]byte, error
 
 	if compression {
 		// Compress data with gzip
-		compressBuffer(*dataBuffer)
+		compressBuffer(dataBuffer)
 	}
 
 	data := dataBuffer.Bytes()
