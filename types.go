@@ -141,7 +141,7 @@ type Match struct {
 	Mode            uint8
 	ScoringType     uint8
 	TeamType        uint8
-	Freemode        bool
+	Freemod         bool
 	Seed            int32
 }
 
