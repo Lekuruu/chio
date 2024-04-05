@@ -152,6 +152,10 @@ type MatchSlot struct {
 	Mods   uint32
 }
 
+func (s *MatchSlot) HasPlayer() bool {
+	return SlotStatusHasPlayer&uint8(s.Status) > 0
+}
+
 type MatchJoin struct {
 	MatchId  int32
 	Password string

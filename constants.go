@@ -259,14 +259,15 @@ const (
 )
 
 const (
-	SlotStatusOpen     uint8 = 1 << 0
-	SlotStatusLocked   uint8 = 1 << 1
-	SlotStatusNotReady uint8 = 1 << 2
-	SlotStatusReady    uint8 = 1 << 3
-	SlotStatusNoMap    uint8 = 1 << 4
-	SlotStatusPlaying  uint8 = 1 << 5
-	SlotStatusComplete uint8 = 1 << 6
-	SlotStatusQuit     uint8 = 1 << 7
+	SlotStatusOpen      uint8 = 1 << 0
+	SlotStatusLocked    uint8 = 1 << 1
+	SlotStatusNotReady  uint8 = 1 << 2
+	SlotStatusReady     uint8 = 1 << 3
+	SlotStatusNoMap     uint8 = 1 << 4
+	SlotStatusPlaying   uint8 = 1 << 5
+	SlotStatusComplete  uint8 = 1 << 6
+	SlotStatusQuit      uint8 = 1 << 7
+	SlotStatusHasPlayer uint8 = SlotStatusNotReady | SlotStatusReady | SlotStatusNoMap | SlotStatusPlaying | SlotStatusComplete
 )
 
 const (
