@@ -51,7 +51,7 @@ type Channel struct {
 	Name      string
 	Topic     string
 	Owner     string
-	UserCount int32
+	UserCount int16
 }
 
 type BeatmapInfo struct {
