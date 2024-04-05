@@ -15,7 +15,7 @@ type Encoder struct {
 
 type Decoder struct {
 	packetId    uint16
-	function    func([]byte) (any, error)
+	function    func(io.Reader) (any, error)
 	fromVersion uint32
 	toVersion   uint32
 }
@@ -25,7 +25,7 @@ var Encoders map[uint16][]Encoder = make(map[uint16][]Encoder)
 
 // RegisterDecoder registers a new decoder for the given packetId and version range.
 // The decoder function must decode the given io.Reader data to a matching data type.
-func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func([]byte) (any, error)) {
+func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func(io.Reader) (any, error)) {
 	Decoders[packetId] = append(
 		Decoders[packetId],
 		Decoder{
@@ -81,7 +81,8 @@ func Decode(buffer *bytes.Buffer, version uint32) (uint16, any, error) {
 		return 0, nil, fmt.Errorf("no decoder found for packetId '%d' and version '%d'", packetId, version)
 	}
 
-	packetType, err := decoder.function(data)
+	reader := io.Reader(bytes.NewReader(data))
+	packetType, err := decoder.function(reader)
 
 	if err != nil {
 		return 0, nil, err
@@ -135,7 +136,7 @@ func Encode[T any](packetId uint16, packetData T, version uint32) ([]byte, error
 func findEncoder(packetId uint16, version uint32) *Encoder {
 	if encoders, ok := Encoders[packetId]; ok {
 		for _, encoder := range encoders {
-			if encoder.fromVersion >= version && encoder.toVersion <= version {
+			if encoder.fromVersion <= version && encoder.toVersion <= version {
 				return &encoder
 			}
 		}
@@ -147,7 +148,7 @@ func findEncoder(packetId uint16, version uint32) *Encoder {
 func findDecoder(packetId uint16, version uint32) *Decoder {
 	if decoders, ok := Decoders[packetId]; ok {
 		for _, decoder := range decoders {
-			if decoder.fromVersion >= version && decoder.toVersion <= version {
+			if decoder.fromVersion <= version && decoder.toVersion <= version {
 				return &decoder
 			}
 		}
