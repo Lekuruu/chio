@@ -129,7 +129,7 @@ func (sf *ScoreFrame) GetChecksum() string {
 type Match struct {
 	Id              int32
 	InProgress      bool
-	MatchType       uint8
+	Type            uint8
 	Mods            uint32
 	Name            string
 	Password        string
