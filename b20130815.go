@@ -128,6 +128,28 @@ func writeReplayFrameBundle(any interface{}, writer io.Writer) {
 
 func writeMatch(any interface{}, writer io.Writer) {
 	match := any.(Match)
+
+	// Adjust slot size
+	if len(match.Slots) != 8 && !IgnoreMatchSlotSize {
+		match.Slots = match.Slots[:8]
+
+		// Fill up with empty slots
+		for i := 0; i < (8 - len(match.Slots)); i++ {
+			match.Slots = append(
+				match.Slots,
+				MatchSlot{
+					UserId: -1,
+					Status: SlotStatusLocked,
+					Team:   SlotTeamNeutral,
+					Mods:   NoMod,
+				},
+			)
+		}
+
+		// TODO: Figure out when slot size was changed to 16
+		//		 and add a handler for that.
+	}
+
 	writeInt32(match.Id, writer)
 	writeBool(match.InProgress, writer)
 	writeUint8(match.Type, writer)
@@ -137,6 +159,7 @@ func writeMatch(any interface{}, writer io.Writer) {
 	writeString(match.BeatmapText, writer)
 	writeInt32(match.BeatmapId, writer)
 	writeString(match.BeatmapChecksum, writer)
+
 	for _, slot := range match.Slots {
 		writeUint8(slot.Status, writer)
 	}
@@ -148,6 +171,7 @@ func writeMatch(any interface{}, writer io.Writer) {
 			writeInt32(slot.UserId, writer)
 		}
 	}
+
 	writeInt32(match.HostId, writer)
 	writeUint8(match.Mode, writer)
 	writeUint8(match.ScoringType, writer)

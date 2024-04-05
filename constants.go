@@ -284,4 +284,8 @@ const (
 	RankedStatusQualified int8 = 3
 )
 
-var BanchoMatchSize = 8
+// Chio will dynamically adjust the sent slots, based on
+// the client version. This is useful for compatibility
+// between newer and older clients. However, if you have
+// a custom slot size, you can enable this flag.
+var IgnoreMatchSlotSize = false
