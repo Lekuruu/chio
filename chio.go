@@ -15,7 +15,7 @@ type Encoder struct {
 
 type Decoder struct {
 	packetId    uint16
-	function    func([]byte)
+	function    func([]byte) (any, error)
 	fromVersion uint32
 	toVersion   uint32
 }
@@ -25,7 +25,7 @@ var Encoders map[uint16][]Encoder = make(map[uint16][]Encoder)
 
 // RegisterDecoder registers a new decoder for the given packetId and version range.
 // The decoder function must decode the given io.Reader data to a matching data type.
-func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func([]byte)) {
+func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func([]byte) (any, error)) {
 	Decoders[packetId] = append(
 		Decoders[packetId],
 		Decoder{
@@ -51,9 +51,43 @@ func RegisterEncoder(packetId uint16, fromVersion uint32, toVersion uint32, func
 	)
 }
 
-func Decode(buffer *bytes.Buffer, version uint32) any {
-	// TODO
-	return nil
+// Decode decodes a bancho packet from the given buffer.
+// It adjusts the output to the given version, so that the packet is compatible with all clients.
+// The packet data is returned as a struct from chio/types.go, that matches the given packetId.
+func Decode(buffer *bytes.Buffer, version uint32) (uint16, any, error) {
+	if version > 20130815 {
+		version = 20130815
+	}
+
+	packetId := readUint16(buffer)
+	compression := true
+
+	if version > 323 {
+		// Version 323 introduced a boolean for compression
+		compression = readBool(buffer)
+	}
+
+	length := readUint32(buffer)
+	data := buffer.Next(int(length))
+
+	if compression {
+		// Decompress data with gzip
+		data = decompressData(data)
+	}
+
+	decoder := findDecoder(packetId, version)
+
+	if decoder == nil {
+		return 0, nil, fmt.Errorf("no decoder found for packetId '%d' and version '%d'", packetId, version)
+	}
+
+	packetType, err := decoder.function(data)
+
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return packetId, packetType, nil
 }
 
 // Encode encodes a bancho packet with the given packetId and packetData.
@@ -103,6 +137,18 @@ func findEncoder(packetId uint16, version uint32) *Encoder {
 		for _, encoder := range encoders {
 			if encoder.fromVersion >= version && encoder.toVersion <= version {
 				return &encoder
+			}
+		}
+	}
+	return nil
+}
+
+// Find and return the decoder that fits the given packetId and version.
+func findDecoder(packetId uint16, version uint32) *Decoder {
+	if decoders, ok := Decoders[packetId]; ok {
+		for _, decoder := range decoders {
+			if decoder.fromVersion >= version && decoder.toVersion <= version {
+				return &decoder
 			}
 		}
 	}
