@@ -88,7 +88,7 @@ type ReplayFrameBundle struct {
 	Action uint8
 	Extra  int32
 	Frames []ReplayFrame
-	Frame  ScoreFrame
+	Frame  *ScoreFrame
 }
 
 type ScoreFrame struct {
