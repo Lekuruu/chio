@@ -13,7 +13,29 @@ type Encoder struct {
 	toVersion   uint32
 }
 
+type Decoder struct {
+	packetId    uint16
+	function    func([]byte)
+	fromVersion uint32
+	toVersion   uint32
+}
+
+var Decoders map[uint16][]Decoder = make(map[uint16][]Decoder)
 var Encoders map[uint16][]Encoder = make(map[uint16][]Encoder)
+
+// RegisterDecoder registers a new decoder for the given packetId and version range.
+// The decoder function must decode the given io.Reader data to a matching data type.
+func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func([]byte)) {
+	Decoders[packetId] = append(
+		Decoders[packetId],
+		Decoder{
+			packetId,
+			function,
+			fromVersion,
+			toVersion,
+		},
+	)
+}
 
 // RegisterEncoder registers a new encoder for the given packetId and version range.
 // The encoder function must encode the given data type to the given io.Writer.
@@ -27,6 +49,11 @@ func RegisterEncoder(packetId uint16, fromVersion uint32, toVersion uint32, func
 			toVersion,
 		},
 	)
+}
+
+func Decode(buffer *bytes.Buffer, version uint32) any {
+	// TODO
+	return nil
 }
 
 // Encode encodes a bancho packet with the given packetId and packetData.
