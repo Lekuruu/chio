@@ -183,6 +183,12 @@ func readFloat64(reader io.Reader) float64 {
 }
 
 func readString(reader io.Reader) string {
+	prefix := readUint8(reader)
+
+	if prefix == 0x00 {
+		return ""
+	}
+
 	length := uleb128.UnmarshalReader(reader)
 
 	if length == 0 {
