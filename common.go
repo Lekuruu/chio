@@ -107,3 +107,128 @@ func compressBuffer(buffer *bytes.Buffer) {
 	buffer.Reset()
 	buffer.Write(zb.Bytes())
 }
+
+func compressData(data []byte) []byte {
+	zb := new(bytes.Buffer)
+	zw := gzip.NewWriter(zb)
+	zw.Write(data)
+	zw.Close()
+	return zb.Bytes()
+}
+
+func readInt8(reader io.Reader) int8 {
+	var value int8
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readUint8(reader io.Reader) uint8 {
+	var value uint8
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readInt16(reader io.Reader) int16 {
+	var value int16
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readUint16(reader io.Reader) uint16 {
+	var value uint16
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readInt32(reader io.Reader) int32 {
+	var value int32
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readUint32(reader io.Reader) uint32 {
+	var value uint32
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readInt64(reader io.Reader) int64 {
+	var value int64
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readUint64(reader io.Reader) uint64 {
+	var value uint64
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readBool(reader io.Reader) bool {
+	var value bool
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readFloat32(reader io.Reader) float32 {
+	var value float32
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readFloat64(reader io.Reader) float64 {
+	var value float64
+	binary.Read(reader, binary.LittleEndian, &value)
+	return value
+}
+
+func readString(reader io.Reader) string {
+	length := uleb128.UnmarshalReader(reader)
+
+	if length == 0 {
+		return ""
+	}
+
+	data := make([]byte, length)
+	reader.Read(data)
+	return string(data)
+}
+
+func readIntList16(reader io.Reader) []int32 {
+	length := readUint16(reader)
+	list := make([]int32, length)
+
+	for i := 0; i < int(length); i++ {
+		list[i] = readInt32(reader)
+	}
+
+	return list
+}
+
+func readIntList32(reader io.Reader) []int32 {
+	length := readUint32(reader)
+	list := make([]int32, length)
+
+	for i := 0; i < int(length); i++ {
+		list[i] = readInt32(reader)
+	}
+
+	return list
+}
+
+func decompressBuffer(buffer *bytes.Buffer) {
+	dst := new(bytes.Buffer)
+	zr, _ := gzip.NewReader(buffer)
+	io.Copy(dst, zr)
+	zr.Close()
+	buffer.Reset()
+	buffer.Write(dst.Bytes())
+}
+
+func decompressData(data []byte) []byte {
+	dst := new(bytes.Buffer)
+	zr, _ := gzip.NewReader(bytes.NewReader(data))
+	io.Copy(dst, zr)
+	zr.Close()
+	return dst.Bytes()
+}
