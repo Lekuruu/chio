@@ -15,7 +15,7 @@ type Encoder struct {
 
 type Decoder struct {
 	packetId    uint16
-	function    func(io.Reader) (any, error)
+	function    func(io.Reader) any
 	fromVersion uint32
 	toVersion   uint32
 }
@@ -25,7 +25,7 @@ var Encoders map[uint16][]Encoder = make(map[uint16][]Encoder)
 
 // RegisterDecoder registers a new decoder for the given packetId and version range.
 // The decoder function must decode the given io.Reader data to a matching data type.
-func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func(io.Reader) (any, error)) {
+func RegisterDecoder(packetId uint16, fromVersion uint32, toVersion uint32, function func(io.Reader) any) {
 	Decoders[packetId] = append(
 		Decoders[packetId],
 		Decoder{
@@ -82,11 +82,7 @@ func Decode(buffer *bytes.Buffer, version uint32) (uint16, any, error) {
 	}
 
 	reader := io.Reader(bytes.NewReader(data))
-	packetType, err := decoder.function(reader)
-
-	if err != nil {
-		return 0, nil, err
-	}
+	packetType := decoder.function(reader)
 
 	return packetId, packetType, nil
 }
