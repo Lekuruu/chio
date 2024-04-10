@@ -105,7 +105,7 @@ func writeScoreFrame(any interface{}, writer io.Writer) {
 	writeUint16(frame.TotalGeki, writer)
 	writeUint16(frame.TotalKatu, writer)
 	writeUint16(frame.TotalMiss, writer)
-	writeInt32(frame.TotalScore, writer)
+	writeUint32(frame.TotalScore, writer)
 	writeUint16(frame.MaxCombo, writer)
 	writeUint16(frame.CurrentCombo, writer)
 	writeBool(frame.Perfect, writer)
@@ -116,13 +116,13 @@ func writeScoreFrame(any interface{}, writer io.Writer) {
 func writeReplayFrameBundle(any interface{}, writer io.Writer) {
 	bundle := any.(ReplayFrameBundle)
 	writeInt32(bundle.Extra, writer)
-	writeUint16(len(bundle.Frames), writer)
+	writeUint16(uint16(len(bundle.Frames)), writer)
 	for _, frame := range bundle.Frames {
 		writeReplayFrame(frame, writer)
 	}
 	writeUint8(bundle.Action, writer)
 	if bundle.Frame != nil {
-		writeScoreFrame(&bundle.Frame, writer)
+		writeScoreFrame(*bundle.Frame, writer)
 	}
 }
 
