@@ -131,19 +131,21 @@ func writeMatch(any interface{}, writer io.Writer) {
 
 	// Adjust slot size
 	if len(match.Slots) != 8 && !IgnoreMatchSlotSize {
-		match.Slots = match.Slots[:8]
-
-		// Fill up with empty slots
-		for i := 0; i < (8 - len(match.Slots)); i++ {
-			match.Slots = append(
-				match.Slots,
-				MatchSlot{
-					UserId: -1,
-					Status: SlotStatusLocked,
-					Team:   SlotTeamNeutral,
-					Mods:   NoMod,
-				},
-			)
+		if len(match.Slots) > 8 {
+			match.Slots = match.Slots[:8]
+		} else {
+			// Fill up with empty slots
+			for i := 0; i < (8 - len(match.Slots)); i++ {
+				match.Slots = append(
+					match.Slots,
+					MatchSlot{
+						UserId: -1,
+						Status: SlotStatusLocked,
+						Team:   SlotTeamNeutral,
+						Mods:   NoMod,
+					},
+				)
+			}
 		}
 
 		// TODO: Figure out when slot size was changed to 16
