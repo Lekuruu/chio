@@ -80,7 +80,7 @@ func writeBeatmapInfo(any interface{}, writer io.Writer) {
 
 func writeBeatmapInfoReply(any interface{}, writer io.Writer) {
 	reply := any.(BeatmapInfoReply)
-	writeInt32(len(reply.Beatmaps), writer)
+	writeInt32(int32(len(reply.Beatmaps)), writer)
 	for _, info := range reply.Beatmaps {
 		writeBeatmapInfo(info, writer)
 	}
@@ -193,6 +193,17 @@ func writeTitleUpdate(any interface{}, writer io.Writer) {
 	)
 }
 
+func readStatus(reader io.Reader) interface{} {
+	return UserStatus{
+		Action:          readUint8(reader),
+		Text:            readString(reader),
+		BeatmapChecksum: readString(reader),
+		Mods:            readUint32(reader),
+		Mode:            readUint8(reader),
+		BeatmapId:       readInt32(reader),
+	}
+}
+
 func init() {
 	RegisterEncoder(BanchoLoginReply, 20130815, 232, writeInt32)
 	RegisterEncoder(BanchoProtocolNegotiation, 20130815, 232, writeInt32)
@@ -252,4 +263,6 @@ func init() {
 	RegisterEncoder(BanchoRTX, 20130815, 232, writeString)
 	RegisterEncoder(BanchoMatchAbort, 20130815, 232, writeNothing)
 	RegisterEncoder(BanchoSwitchTournamentServer, 20130815, 232, writeString)
+
+	RegisterDecoder(OsuSendUserStatus, 20130815, 232, readStatus)
 }
