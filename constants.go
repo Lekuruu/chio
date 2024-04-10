@@ -193,16 +193,16 @@ const (
 )
 
 const (
-	OsuRankXH uint8 = 0
-	OsuRankSH uint8 = 1
-	OsuRankX  uint8 = 2
-	OsuRankS  uint8 = 3
-	OsuRankA  uint8 = 4
-	OsuRankB  uint8 = 5
-	OsuRankC  uint8 = 6
-	OsuRankD  uint8 = 7
-	OsuRankF  uint8 = 8
-	OsuRankN  uint8 = 9
+	OsuRankXH int8 = 0
+	OsuRankSH int8 = 1
+	OsuRankX  int8 = 2
+	OsuRankS  int8 = 3
+	OsuRankA  int8 = 4
+	OsuRankB  int8 = 5
+	OsuRankC  int8 = 6
+	OsuRankD  int8 = 7
+	OsuRankF  int8 = 8
+	OsuRankN  int8 = 9
 )
 
 const (
