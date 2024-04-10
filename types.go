@@ -16,13 +16,13 @@ type UserInfo struct {
 	Mode         uint8
 	Longitude    float32
 	Latitude     float32
-	Rank         uint32
+	Rank         int32
 	City         string
 	Status       UserStatus
 	Rscore       uint64
 	Tscore       uint64
 	Accuracy     float32
-	Playcount    uint32
+	Playcount    int32
 	Pp           uint16
 }
 
