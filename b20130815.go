@@ -1,6 +1,7 @@
 package chio
 
 import (
+	"encoding/binary"
 	"io"
 )
 
@@ -195,6 +196,15 @@ func writeTitleUpdate(any interface{}, writer io.Writer) {
 	)
 }
 
+func readMessage(reader io.Reader) interface{} {
+	return Message{
+		Sender:   readString(reader),
+		Content:  readString(reader),
+		Target:   readString(reader),
+		SenderId: readInt32(reader),
+	}
+}
+
 func readStatus(reader io.Reader) interface{} {
 	return UserStatus{
 		Action:          readUint8(reader),
@@ -204,6 +214,121 @@ func readStatus(reader io.Reader) interface{} {
 		Mode:            readUint8(reader),
 		BeatmapId:       readInt32(reader),
 	}
+}
+
+func readBeatmapInfoRequest(reader io.Reader) interface{} {
+	return BeatmapInfoRequest{
+		Filenames: readStringList(reader),
+		Ids:       readIntList32(reader),
+	}
+}
+
+func readReplayFrame(reader io.Reader) interface{} {
+	return ReplayFrame{
+		ButtonState: readUint8(reader),
+		LegacyByte:  readUint8(reader),
+		MouseX:      readFloat32(reader),
+		MouseY:      readFloat32(reader),
+		Time:        readInt32(reader),
+	}
+}
+
+func readReplayFrameList(reader io.Reader) interface{} {
+	length := readUint16(reader)
+	list := make([]ReplayFrame, length)
+
+	for i := 0; i < int(length); i++ {
+		list[i] = readReplayFrame(reader).(ReplayFrame)
+	}
+
+	return list
+}
+
+func readScoreFrame(reader io.Reader) interface{} {
+	// Hacky way of checking if there is data left
+	// Why can't I just use reader.Len() ffs go
+	var time int32
+	err := binary.Read(reader, binary.LittleEndian, &time)
+
+	if err != nil {
+		return nil
+	}
+
+	frame := ScoreFrame{
+		Time:         time,
+		Id:           readUint8(reader),
+		Total300:     readUint16(reader),
+		Total100:     readUint16(reader),
+		Total50:      readUint16(reader),
+		TotalGeki:    readUint16(reader),
+		TotalKatu:    readUint16(reader),
+		TotalMiss:    readUint16(reader),
+		TotalScore:   readUint32(reader),
+		MaxCombo:     readUint16(reader),
+		CurrentCombo: readUint16(reader),
+		Perfect:      readBool(reader),
+		Hp:           readUint8(reader),
+		TagByte:      readUint8(reader),
+	}
+
+	return &frame
+}
+
+func readReplayFrameBundle(reader io.Reader) interface{} {
+	bundle := ReplayFrameBundle{
+		Extra:  readInt32(reader),
+		Frames: readReplayFrameList(reader).([]ReplayFrame),
+		Action: readUint8(reader),
+		Frame:  readScoreFrame(reader).(*ScoreFrame),
+	}
+	return bundle
+}
+
+func readMatchJoin(reader io.Reader) interface{} {
+	return MatchJoin{
+		MatchId:  readInt32(reader),
+		Password: readString(reader),
+	}
+}
+
+func readMatch(reader io.Reader) interface{} {
+	match := Match{
+		Id:              readInt32(reader),
+		InProgress:      readBool(reader),
+		Type:            readUint8(reader),
+		Mods:            readUint32(reader),
+		Name:            readString(reader),
+		Password:        readString(reader),
+		BeatmapText:     readString(reader),
+		BeatmapId:       readInt32(reader),
+		BeatmapChecksum: readString(reader),
+	}
+
+	for i := 0; i < 8; i++ {
+		match.Slots[i].Status = readUint8(reader)
+	}
+	for i := 0; i < 8; i++ {
+		match.Slots[i].Team = readUint8(reader)
+	}
+	for i := 0; i < 8; i++ {
+		if match.Slots[i].HasPlayer() {
+			match.Slots[i].UserId = readInt32(reader)
+		}
+	}
+
+	match.HostId = readInt32(reader)
+	match.Mode = readUint8(reader)
+	match.ScoringType = readUint8(reader)
+	match.TeamType = readUint8(reader)
+	match.Freemod = readBool(reader)
+	if match.Freemod {
+		for i := 0; i < 8; i++ {
+			match.Slots[i].Mods = readUint32(reader)
+		}
+	}
+	match.Seed = readInt32(reader)
+
+	return match
 }
 
 func init() {
@@ -266,5 +391,50 @@ func init() {
 	RegisterEncoder(BanchoMatchAbort, 20130815, 232, writeNothing)
 	RegisterEncoder(BanchoSwitchTournamentServer, 20130815, 232, writeString)
 
-	RegisterDecoder(OsuSendUserStatus, 20130815, 232, readStatus)
+	RegisterDecoder(OsuSendUserStatus, 20130815, 20120812, readStatus)
+	RegisterDecoder(OsuSendIrcMessage, 20130815, 20121223, readMessage)
+	RegisterDecoder(OsuExit, 20130815, 1700, readBanchoInt32)
+	RegisterDecoder(OsuRequestStatusUpdate, 20130815, 232, readNothing)
+	RegisterDecoder(OsuPong, 20130815, 232, readNothing)
+	RegisterDecoder(OsuStartSpectating, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuStopSpectating, 20130815, 232, readNothing)
+	RegisterDecoder(OsuSpectateFrames, 20130815, 20130329, readReplayFrameBundle)
+	RegisterDecoder(OsuErrorReport, 20130815, 232, readBanchoString)
+	RegisterDecoder(OsuCantSpectate, 20130815, 232, readNothing)
+	RegisterDecoder(OsuSendIrcMessagePrivate, 20130815, 20121223, readMessage)
+	RegisterDecoder(OsuLobbyJoin, 20130815, 232, readNothing)
+	RegisterDecoder(OsuLobbyPart, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchCreate, 20130815, 20120812, readMatch)
+	RegisterDecoder(OsuMatchJoin, 20130815, 590, readMatchJoin)
+	RegisterDecoder(OsuMatchPart, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchChangeSlot, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuMatchReady, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchLock, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuMatchChangeSettings, 20130815, 20130812, readMatch)
+	RegisterDecoder(OsuMatchStart, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchScoreUpdate, 20130815, 535, readScoreFrame)
+	RegisterDecoder(OsuMatchComplete, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchChangeMods, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuMatchLoadComplete, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchNoBeatmap, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchFailed, 20130815, 232, readNothing)
+	RegisterDecoder(OsuMatchHasBeatmap, 20130815, 232, readNothing)
+	RegisterDecoder(OsuChannelJoin, 20130815, 232, readBanchoString)
+	RegisterDecoder(OsuBeatmapInfoRequest, 20130815, 535, readBeatmapInfoRequest)
+	RegisterDecoder(OsuMatchTransferHost, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuFriendsAdd, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuFriendsRemove, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuMatchChangeTeam, 20130815, 232, readNothing)
+	RegisterDecoder(OsuChannelLeave, 20130815, 232, readBanchoString)
+	RegisterDecoder(OsuReceiveUpdates, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuSetIrcAwayMessage, 20130815, 20121223, readMessage)
+	RegisterDecoder(OsuUserStatsRequest, 20130815, 232, readBanchoList16)
+	RegisterDecoder(OsuInvite, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuMatchChangePassword, 20130815, 20130812, readMatch)
+	RegisterDecoder(OsuTournamentMatchInfo, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuPresenceRequest, 20130815, 232, readBanchoList16)
+	RegisterDecoder(OsuPresenceRequestAll, 20130815, 232, readNothing)
+	RegisterDecoder(OsuChangeFriendOnlyDMs, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuTournamentJoinMatchChannel, 20130815, 232, readBanchoInt32)
+	RegisterDecoder(OsuTournamentLeaveMatchChannel, 20130815, 232, readBanchoInt32)
 }
