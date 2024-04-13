@@ -262,3 +262,10 @@ func decompressData(data []byte) []byte {
 	zr.Close()
 	return dst.Bytes()
 }
+
+// Interface functions for decoder registration
+
+func readBanchoInt32(r io.Reader) interface{}  { return readInt32(r) }
+func readBanchoString(r io.Reader) interface{} { return readString(r) }
+func readBanchoList16(r io.Reader) interface{} { return readIntList16(r) }
+func readBanchoList32(r io.Reader) interface{} { return readIntList32(r) }
