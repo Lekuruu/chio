@@ -234,3 +234,44 @@ func TestEncodeMatch(t *testing.T) {
 
 	t.Log(data)
 }
+
+func TestEncodeInt(t *testing.T) {
+	data, err := Encode(
+		BanchoLoginReply,
+		int32(-1), 20130815,
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(data)
+}
+
+func TestEncodeString(t *testing.T) {
+	data, err := Encode(
+		BanchoAnnounce,
+		"Hello, World!",
+		20130815,
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(data)
+}
+
+func TestEncodeList(t *testing.T) {
+	data, err := Encode(
+		BanchoFriendsList,
+		[]int32{1, 2, 3, 4, 5},
+		20130815,
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(data)
+}
