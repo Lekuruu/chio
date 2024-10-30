@@ -93,15 +93,6 @@ func writeString(w io.Writer, v string) error {
 	return nil
 }
 
-func compressBuffer(buffer *bytes.Buffer) {
-	zb := new(bytes.Buffer)
-	zw := gzip.NewWriter(zb)
-	zw.Write(buffer.Bytes())
-	zw.Close()
-	buffer.Reset()
-	buffer.Write(zb.Bytes())
-}
-
 func compressData(data []byte) []byte {
 	zb := new(bytes.Buffer)
 	zw := gzip.NewWriter(zb)
@@ -226,15 +217,6 @@ func readString(r io.Reader) (v string, err error) {
 	}
 
 	return string(buf), nil
-}
-
-func decompressBuffer(buffer *bytes.Buffer) {
-	dst := new(bytes.Buffer)
-	zr, _ := gzip.NewReader(buffer)
-	io.Copy(dst, zr)
-	zr.Close()
-	buffer.Reset()
-	buffer.Write(dst.Bytes())
 }
 
 func decompressData(data []byte) []byte {
