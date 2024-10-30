@@ -3,8 +3,8 @@ package chio
 // BanchoPacket is a struct that represents a packet that
 // is sent or received
 type BanchoPacket struct {
-	PacketId int32
-	Data     interface{}
+	PacketId uint16
+	Data     any
 }
 
 // BanchoIO is the interface that wraps the basic methods for
@@ -20,13 +20,13 @@ type BanchoIO interface {
 	Close() error
 
 	// WritePacket writes a packet to the underlying data stream
-	WritePacket(packetId int32, data interface{}) error
+	WritePacket(packetId uint16, data []byte) error
 
 	// ReadPacket reads a packet from the underlying data stream
 	ReadPacket() (packet *BanchoPacket, err error)
 
 	// ImplementsPacket checks if the packetId is implemented in the client
-	ImplementsPacket(packetId int32) bool
+	ImplementsPacket(packetId uint16) bool
 
 	WriteLoginReply(reply int32) error
 	WriteMessage(message Message) error
