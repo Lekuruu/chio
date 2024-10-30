@@ -23,7 +23,7 @@ type BanchoIO interface {
 	WritePacket(packetId int32, data interface{}) error
 
 	// ReadPacket reads a packet from the underlying data stream
-	ReadPacket() (err error, packet *BanchoPacket)
+	ReadPacket() (packet *BanchoPacket, err error)
 
 	// ImplementsPacket checks if the packetId is implemented in the client
 	ImplementsPacket(packetId int32) bool
