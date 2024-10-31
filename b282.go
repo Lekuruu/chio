@@ -207,8 +207,12 @@ func (client *b282) WriteSpectateFrames(bundle ReplayFrameBundle) error {
 	writeUint16(writer, uint16(len(bundle.Frames)))
 
 	for _, frame := range bundle.Frames {
-		writeUint8(writer, frame.ButtonState)
-		writeUint8(writer, frame.LegacyByte)
+		// Convert button state
+		leftMouse := ButtonStateLeft1&frame.ButtonState > 0 || ButtonStateLeft2&frame.ButtonState > 0
+		rightMouse := ButtonStateRight1&frame.ButtonState > 0 || ButtonStateRight2&frame.ButtonState > 0
+
+		writeBoolean(writer, leftMouse)
+		writeBoolean(writer, rightMouse)
 		writeFloat32(writer, frame.MouseX)
 		writeFloat32(writer, frame.MouseY)
 		writeInt32(writer, frame.Time)
@@ -335,9 +339,9 @@ func (client *b282) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	var err error
 	errors := NewErrorCollection()
 	frame := &ReplayFrame{}
-	frame.ButtonState, err = readUint8(reader)
+	mouseLeft, err := readBoolean(reader)
 	errors.Add(err)
-	frame.LegacyByte, err = readUint8(reader)
+	mouseRight, err := readBoolean(reader)
 	errors.Add(err)
 	frame.MouseX, err = readFloat32(reader)
 	errors.Add(err)
@@ -345,6 +349,17 @@ func (client *b282) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	errors.Add(err)
 	frame.Time, err = readInt32(reader)
 	errors.Add(err)
+
+	frame.ButtonState = 0
+	frame.LegacyByte = 0
+
+	if mouseLeft {
+		frame.ButtonState |= ButtonStateLeft1
+	}
+	if mouseRight {
+		frame.ButtonState |= ButtonStateRight1
+	}
+
 	return frame, errors.Next()
 }
 
