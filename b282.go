@@ -36,7 +36,10 @@ func (client *b282) SetStream(stream io.ReadWriteCloser) {
 }
 
 func (client *b282) WritePacket(packetId uint16, data []byte) error {
+	// Convert packetId back for the client
+	packetId = client.convertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
+
 	err := writeUint16(writer, packetId)
 	if err != nil {
 		return err
@@ -65,7 +68,7 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 	}
 
 	// Convert packet ID to a usable value
-	packet.PacketId = client.convertPacketId(packet.PacketId)
+	packet.PacketId = client.convertInputPacketId(packet.PacketId)
 
 	if !client.ImplementsPacket(packet.PacketId) {
 		return nil, nil
@@ -208,13 +211,24 @@ func (client *b282) WriteSpectatorCantSpectate(userId uint32) error {
 	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
 }
 
-func (client *b282) convertPacketId(packetId uint16) uint16 {
+func (client *b282) convertInputPacketId(packetId uint16) uint16 {
 	if packetId == 6 {
 		// "CommandError" packet
 		return 0xFFFF
 	}
 	if packetId > 6 {
 		return packetId - 1
+	}
+	return packetId
+}
+
+func (client *b282) convertOutputPacketId(packetId uint16) uint16 {
+	if packetId == 0xFFFF {
+		// "CommandError" packet
+		return 6
+	}
+	if packetId >= 6 {
+		return packetId + 1
 	}
 	return packetId
 }
