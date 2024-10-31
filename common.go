@@ -220,8 +220,11 @@ func readString(r io.Reader) (v string, err error) {
 }
 
 func decompressData(data []byte) []byte {
-	dst := new(bytes.Buffer)
-	zr, _ := gzip.NewReader(bytes.NewReader(data))
+	dst := bytes.NewBuffer([]byte{})
+	zr, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return []byte{}
+	}
 	io.Copy(dst, zr)
 	zr.Close()
 	return dst.Bytes()
