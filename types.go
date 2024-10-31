@@ -21,14 +21,14 @@ type UserPresence struct {
 	Permissions  uint8
 	Longitude    float32
 	Latitude     float32
+	City         string
 }
 
 type UserStats struct {
 	Rank      int32
-	City      string
 	Rscore    uint64
 	Tscore    uint64
-	Accuracy  float32
+	Accuracy  float64
 	Playcount int32
 	PP        uint16
 }
@@ -40,6 +40,7 @@ type UserStatus struct {
 	Mode            uint8
 	BeatmapChecksum string
 	BeatmapId       int32
+	UpdateStats     bool
 }
 
 type UserQuit struct {
