@@ -6,7 +6,7 @@ import "io"
 // is sent or received
 type BanchoPacket struct {
 	PacketId uint16
-	Data     any
+	Data     interface{}
 }
 
 // BanchoIO is an interface that wraps the basic methods for
@@ -107,8 +107,9 @@ type BanchoWriters interface {
 }
 
 var clients map[int]BanchoIO = make(map[int]BanchoIO)
-var lowestVersion int
-var highestVersion int
+
+const lowestVersion int = 282
+const highestVersion int = 282
 
 // GetClientInterface returns a BanchoIO interface for the given client version
 func GetClientInterface(stream io.ReadWriteCloser, clientVersion int) BanchoIO {
@@ -122,11 +123,11 @@ func GetClientInterface(stream io.ReadWriteCloser, clientVersion int) BanchoIO {
 		return initializeClient(stream, client)
 	}
 
-	if _, ok := clients[clientVersion]; ok {
-		client := clients[clientVersion]
+	if client, ok := clients[clientVersion]; ok {
 		return initializeClient(stream, client)
 	}
 
+	// Find the next compatible version
 	for version, client := range clients {
 		if version <= clientVersion {
 			return initializeClient(stream, client)
@@ -144,7 +145,4 @@ func initializeClient(rw io.ReadWriteCloser, io BanchoIO) BanchoIO {
 
 func init() {
 	clients[282] = &b282{}
-
-	lowestVersion = 282
-	highestVersion = 282
 }
