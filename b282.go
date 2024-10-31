@@ -89,7 +89,11 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("expected %d bytes, got %d", length, n)
 	}
 
-	data := decompressData(compressedData)
+	data, err := decompressData(compressedData)
+	if err != nil {
+		return nil, err
+	}
+
 	packet.Data, err = client.readPacketType(packet.PacketId, bytes.NewReader(data))
 	if err != nil {
 		return nil, err

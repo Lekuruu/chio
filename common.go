@@ -219,13 +219,13 @@ func readString(r io.Reader) (v string, err error) {
 	return string(buf), nil
 }
 
-func decompressData(data []byte) []byte {
+func decompressData(data []byte) ([]byte, error) {
 	dst := bytes.NewBuffer([]byte{})
 	zr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return []byte{}
+		return nil, err
 	}
 	io.Copy(dst, zr)
 	zr.Close()
-	return dst.Bytes()
+	return dst.Bytes(), nil
 }
