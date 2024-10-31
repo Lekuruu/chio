@@ -62,15 +62,15 @@ func (client *b282) WritePacket(packetId uint16, data []byte) error {
 
 func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.PacketId, err = readUint16(client.Stream)
+	packet.Id, err = readUint16(client.Stream)
 	if err != nil {
 		return nil, err
 	}
 
 	// Convert packet ID to a usable value
-	packet.PacketId = client.convertInputPacketId(packet.PacketId)
+	packet.Id = client.convertInputPacketId(packet.Id)
 
-	if !client.ImplementsPacket(packet.PacketId) {
+	if !client.ImplementsPacket(packet.Id) {
 		return nil, nil
 	}
 
@@ -94,7 +94,7 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, err
 	}
 
-	packet.Data, err = client.readPacketType(packet.PacketId, bytes.NewReader(data))
+	packet.Data, err = client.readPacketType(packet.Id, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}

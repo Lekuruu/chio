@@ -5,8 +5,8 @@ import "io"
 // BanchoPacket is a struct that represents a packet that
 // is sent or received
 type BanchoPacket struct {
-	PacketId uint16
-	Data     interface{}
+	Id   uint16
+	Data interface{}
 }
 
 // BanchoIO is an interface that wraps the basic methods for
