@@ -36,18 +36,24 @@ func (client *b282) SetStream(stream io.ReadWriteCloser) {
 }
 
 func (client *b282) WritePacket(packetId uint16, data []byte) error {
-	err := writeUint16(client, packetId)
+	writer := bytes.NewBuffer([]byte{})
+	err := writeUint16(writer, packetId)
 	if err != nil {
 		return err
 	}
 
 	compressed := compressData(data)
-	err = writeUint32(client, uint32(len(compressed)))
+	err = writeUint32(writer, uint32(len(compressed)))
 	if err != nil {
 		return err
 	}
 
-	_, err = client.Write(compressed)
+	_, err = writer.Write(compressed)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Write(writer.Bytes())
 	return err
 }
 
@@ -71,9 +77,13 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 	}
 
 	compressedData := make([]byte, length)
-	_, err = client.Stream.Read(compressedData)
+	n, err := client.Stream.Read(compressedData)
 	if err != nil {
 		return nil, err
+	}
+
+	if n != int(length) {
+		return nil, fmt.Errorf("expected %d bytes, got %d", length, n)
 	}
 
 	data := decompressData(compressedData)
