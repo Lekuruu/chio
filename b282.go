@@ -281,17 +281,17 @@ func (client *b282) readStatus(reader io.Reader) (any, error) {
 
 func (client *b282) readMessage(reader io.Reader) (*Message, error) {
 	var err error
-	errors := NewErrorCollection()
 	message := &Message{}
-	message.Sender, err = readString(reader)
-	errors.Add(err)
 	message.Content, err = readString(reader)
-	errors.Add(err)
+	if err != nil {
+		return nil, err
+	}
 
 	// Private messages & channels have not been implemented yet
 	message.Target = "#osu"
+	message.Sender = ""
 
-	return message, errors.Next()
+	return message, nil
 }
 
 func (client *b282) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
