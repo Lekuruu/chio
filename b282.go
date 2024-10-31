@@ -162,6 +162,13 @@ func (client *b282) WriteIrcChangeUsername(oldName string, newName string) error
 
 func (client *b282) WriteUserStats(info UserInfo) error {
 	writer := bytes.NewBuffer([]byte{})
+
+	if info.Presence.IsIrc {
+		// Write "IrcJoin" packet
+		writeString(writer, info.Name)
+		return client.WritePacket(0xFFFF, writer.Bytes())
+	}
+
 	writeStats(writer, info)
 	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
 }
@@ -217,11 +224,11 @@ func (client *b282) WriteSpectatorCantSpectate(userId uint32) error {
 }
 
 func (client *b282) convertInputPacketId(packetId uint16) uint16 {
-	if packetId == 6 {
-		// "CommandError" packet
+	if packetId == 11 {
+		// "IrcJoin" packet
 		return 0xFFFF
 	}
-	if packetId > 6 {
+	if packetId > 11 {
 		return packetId - 1
 	}
 	return packetId
@@ -229,10 +236,10 @@ func (client *b282) convertInputPacketId(packetId uint16) uint16 {
 
 func (client *b282) convertOutputPacketId(packetId uint16) uint16 {
 	if packetId == 0xFFFF {
-		// "CommandError" packet
-		return 6
+		// "IrcJoin" packet
+		return 11
 	}
-	if packetId >= 6 {
+	if packetId >= 11 {
 		return packetId + 1
 	}
 	return packetId
