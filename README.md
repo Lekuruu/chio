@@ -9,7 +9,7 @@ Chio (Bancho Input/Output) is a bancho packet serialization library written in g
 
 ```go
 import (
-	"github.com/lekuruu/chio"
+    "github.com/lekuruu/chio"
 )
 
 // Assuming you have some kind of tcp server
