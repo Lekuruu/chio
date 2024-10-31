@@ -186,6 +186,10 @@ func (client *b282) WriteUserQuit(quit UserQuit) error {
 		return client.WritePacket(BanchoHandleIrcQuit, writer.Bytes())
 	}
 
+	if quit.QuitState == QuitStateOsuRemaining {
+		return nil
+	}
+
 	writeStats(writer, *quit.Info)
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
 }
