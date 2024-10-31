@@ -7,7 +7,7 @@ type BanchoPacket struct {
 	Data     any
 }
 
-// BanchoIO is the interface that wraps the basic methods for
+// BanchoIO is an interface that wraps the basic methods for
 // reading and writing packets to a Bancho client
 type BanchoIO interface {
 	// Write writes len(p) bytes from p to the underlying data stream
@@ -28,6 +28,13 @@ type BanchoIO interface {
 	// ImplementsPacket checks if the packetId is implemented in the client
 	ImplementsPacket(packetId uint16) bool
 
+	// Packet writers
+	BanchoWriters
+}
+
+// BanchoWriters is an interface that wraps the methods for writing
+// to a Bancho client
+type BanchoWriters interface {
 	WriteLoginReply(reply int32) error
 	WriteMessage(message Message) error
 	WritePing() error
