@@ -23,12 +23,12 @@ func HandleConnection(stream io.ReadWriteCloser, version int) {
 
     for {
         packet, err := client.IO.ReadPacket()
-		if err != nil {
-			fmt.Println("Error reading packet:", err.Error())
-			break
-		}
+        if err != nil {
+            fmt.Println("Error reading packet:", err.Error())
+            break
+        }
 
-		fmt.Printf("Received packet: %d, %v\n", packet.Id, packet.Data)
+        fmt.Printf("Received packet: %d, %v\n", packet.Id, packet.Data)
     }
 }
 ```
