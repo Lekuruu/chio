@@ -404,6 +404,25 @@ func writeStats(writer io.Writer, info UserInfo) error {
 	return nil
 }
 
+// Redirect UserPresence packets to UserStats
+func (client *b282) WriteUserPresence(info UserInfo) error {
+	return client.WriteUserStats(info)
+}
+
+func (client *b282) WriteUserPresenceSingle(info UserInfo) error {
+	return client.WriteUserPresence(info)
+}
+
+func (client *b282) WriteUserPresenceBundle(infos []UserInfo) error {
+	for _, info := range infos {
+		err := client.WriteUserPresence(info)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Unsupported Packets
 func (client *b282) WriteGetAttention() error                            { return nil }
 func (client *b282) WriteAnnouncement(message string) error              { return nil }
@@ -435,19 +454,16 @@ func (client *b282) WriteProtocolNegotiation(version int32) error        { retur
 func (client *b282) WriteTitleUpdate(update TitleUpdate) error           { return nil }
 func (client *b282) WriteMonitor() error                                 { return nil }
 func (client *b282) WriteMatchPlayerSkipped(slotId int32) error          { return nil }
-func (client *b282) WriteUserPresence(presence UserInfo) error           { return nil }
 func (client *b282) WriteRestart(retryMs int32) error                    { return nil }
 func (client *b282) WriteInvite(message Message) error                   { return nil }
 func (client *b282) WriteChannelInfoComplete() error                     { return nil }
 func (client *b282) WriteMatchChangePassword(password string) error      { return nil }
 func (client *b282) WriteSilenceInfo(timeRemaining int32) error          { return nil }
 func (client *b282) WriteUserSilenced(userId uint32) error               { return nil }
-func (client *b282) WriteUserPresenceSingle(info UserInfo) error         { return nil }
-func (client *b282) WriteUserPresenceBundle(infos []UserInfo) error      { return nil }
 func (client *b282) WriteUserDMsBlocked(targetName string) error         { return nil }
 func (client *b282) WriteTargetIsSilenced(targetName string) error       { return nil }
 func (client *b282) WriteVersionUpdateForced() error                     { return nil }
-func (client *b282) WriteSwitchServer(t int32) error                     { return nil }
+func (client *b282) WriteSwitchServer(target int32) error                { return nil }
 func (client *b282) WriteAccountRestricted() error                       { return nil }
 func (client *b282) WriteRTX(message string) error                       { return nil }
 func (client *b282) WriteMatchAbort() error                              { return nil }
