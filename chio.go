@@ -1,5 +1,7 @@
 package chio
 
+import "io"
+
 // BanchoPacket is a struct that represents a packet that
 // is sent or received
 type BanchoPacket struct {
@@ -18,6 +20,15 @@ type BanchoIO interface {
 
 	// Close closes the underlying data stream
 	Close() error
+
+	// Clone returns a copy of the BanchoIO interface
+	Clone() BanchoIO
+
+	// GetStream returns the underlying data stream
+	GetStream() io.ReadWriteCloser
+
+	// SetWriter sets the underlying data stream
+	SetStream(stream io.ReadWriteCloser)
 
 	// WritePacket writes a packet to the underlying data stream
 	WritePacket(packetId uint16, data []byte) error
