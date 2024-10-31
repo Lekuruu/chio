@@ -181,7 +181,7 @@ func (client *b282) WriteUserStats(info UserInfo) error {
 func (client *b282) WriteUserQuit(quit UserQuit) error {
 	writer := bytes.NewBuffer([]byte{})
 
-	if quit.Info.Presence.IsIrc {
+	if quit.Info.Presence.IsIrc && quit.QuitState != QuitStateIrcRemaining {
 		writeString(writer, quit.Info.Name)
 		return client.WritePacket(BanchoHandleIrcQuit, writer.Bytes())
 	}
