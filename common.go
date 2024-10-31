@@ -94,6 +94,9 @@ func writeString(w io.Writer, v string) error {
 }
 
 func compressData(data []byte) []byte {
+	if len(data) == 0 {
+		return []byte{}
+	}
 	zb := new(bytes.Buffer)
 	zw := gzip.NewWriter(zb)
 	zw.Write(data)
