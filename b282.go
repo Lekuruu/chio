@@ -266,8 +266,9 @@ func (client *b282) readStatus(reader io.Reader) (any, error) {
 		errors.Add(err)
 		status.BeatmapChecksum, err = readString(reader)
 		errors.Add(err)
-		status.Mods, err = readUint32(reader)
+		mods, err := readUint16(reader)
 		errors.Add(err)
+		status.Mods = uint32(mods)
 	}
 
 	if status.Action == StatusIdle && status.BeatmapChecksum != "" {
