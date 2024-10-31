@@ -87,7 +87,7 @@ type BanchoWriters interface {
 	WriteTitleUpdate(update TitleUpdate) error
 	WriteMonitor() error
 	WriteMatchPlayerSkipped(slotId int32) error
-	WriteUserPresence(presence UserInfo) error
+	WriteUserPresence(info UserInfo) error
 	WriteRestart(retryMs int32) error
 	WriteInvite(message Message) error
 	WriteChannelInfoComplete() error
@@ -99,7 +99,7 @@ type BanchoWriters interface {
 	WriteUserDMsBlocked(targetName string) error
 	WriteTargetIsSilenced(targetName string) error
 	WriteVersionUpdateForced() error
-	WriteSwitchServer(t int32) error
+	WriteSwitchServer(target int32) error
 	WriteAccountRestricted() error
 	WriteRTX(message string) error
 	WriteMatchAbort() error
