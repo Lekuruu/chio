@@ -141,3 +141,10 @@ func initializeClient(rw io.ReadWriteCloser, io BanchoIO) BanchoIO {
 	newIO.SetStream(rw)
 	return newIO
 }
+
+func init() {
+	clients[282] = &b282{}
+
+	lowestVersion = 282
+	highestVersion = 282
+}
