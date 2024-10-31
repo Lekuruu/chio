@@ -109,6 +109,7 @@ var supportedPackets []uint16 = []uint16{
 	OsuRequestStatusUpdate,
 	OsuPong,
 	BanchoLoginReply,
+	BanchoCommandError,
 	BanchoSendMessage,
 	BanchoPing,
 	BanchoHandleIrcChangeUsername,

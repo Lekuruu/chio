@@ -7,6 +7,7 @@ const (
 	OsuRequestStatusUpdate         uint16 = 3
 	OsuPong                        uint16 = 4
 	BanchoLoginReply               uint16 = 5
+	BanchoCommandError             uint16 = 6
 	BanchoSendMessage              uint16 = 7
 	BanchoPing                     uint16 = 8
 	BanchoHandleIrcChangeUsername  uint16 = 9
