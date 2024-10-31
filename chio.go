@@ -105,3 +105,39 @@ type BanchoWriters interface {
 	WriteMatchAbort() error
 	WriteSwitchTournamentServer(ip string) error
 }
+
+var clients map[int]BanchoIO = make(map[int]BanchoIO)
+var lowestVersion int
+var highestVersion int
+
+// GetClientInterface returns a BanchoIO interface for the given client version
+func GetClientInterface(stream io.ReadWriteCloser, clientVersion int) BanchoIO {
+	if clientVersion < lowestVersion {
+		client := clients[lowestVersion]
+		return initializeClient(stream, client)
+	}
+
+	if clientVersion > highestVersion {
+		client := clients[highestVersion]
+		return initializeClient(stream, client)
+	}
+
+	if _, ok := clients[clientVersion]; ok {
+		client := clients[clientVersion]
+		return initializeClient(stream, client)
+	}
+
+	for version, client := range clients {
+		if version <= clientVersion {
+			return initializeClient(stream, client)
+		}
+	}
+
+	return nil
+}
+
+func initializeClient(rw io.ReadWriteCloser, io BanchoIO) BanchoIO {
+	newIO := io.Clone()
+	newIO.SetStream(rw)
+	return newIO
+}
