@@ -387,7 +387,7 @@ func writeStats(writer io.Writer, info UserInfo) error {
 
 // Unsupported Packets
 func (client *b282) WriteGetAttention() error                            { return nil }
-func (client *b282) WriteAnnounce(message string) error                  { return nil }
+func (client *b282) WriteAnnouncement(message string) error              { return nil }
 func (client *b282) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b282) WriteMatchNew(match Match) error                     { return nil }
 func (client *b282) WriteMatchDisband(matchId uint32) error              { return nil }

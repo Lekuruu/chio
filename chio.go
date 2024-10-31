@@ -58,7 +58,7 @@ type BanchoWriters interface {
 	WriteVersionUpdate() error
 	WriteSpectatorCantSpectate(userId uint32) error
 	WriteGetAttention() error
-	WriteAnnounce(message string) error
+	WriteAnnouncement(message string) error
 	WriteMatchUpdate(match Match) error
 	WriteMatchNew(match Match) error
 	WriteMatchDisband(matchId uint32) error
