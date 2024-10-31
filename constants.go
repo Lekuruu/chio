@@ -121,6 +121,7 @@ const (
 	StatusUnknown      uint8 = 7
 	StatusTesting      uint8 = 8
 	StatusSubmitting   uint8 = 9
+	StatusStatsUpdate  uint8 = 10
 	StatusPaused       uint8 = 10
 	StatusLobby        uint8 = 11
 	StatusMultiplaying uint8 = 12
