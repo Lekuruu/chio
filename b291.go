@@ -434,7 +434,7 @@ func (client *b291) WriteUserPresenceBundle(infos []UserInfo) error {
 }
 
 func (client *b291) WriteGetAttention() error {
-	return nil
+	return client.WritePacket(BanchoGetAttention, []byte{})
 }
 
 func (client *b291) WriteAnnouncement(message string) error {
