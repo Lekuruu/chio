@@ -8,19 +8,20 @@ import (
 
 type b282 struct {
 	BanchoIO
-	Stream io.ReadWriteCloser
+	stream           io.ReadWriteCloser
+	supportedPackets []uint16
 }
 
 func (client *b282) Write(p []byte) (n int, err error) {
-	return client.Stream.Write(p)
+	return client.stream.Write(p)
 }
 
 func (client *b282) Read(p []byte) (n int, err error) {
-	return client.Stream.Read(p)
+	return client.stream.Read(p)
 }
 
 func (client *b282) Close() error {
-	return client.Stream.Close()
+	return client.stream.Close()
 }
 
 func (client *b282) Clone() BanchoIO {
@@ -28,11 +29,11 @@ func (client *b282) Clone() BanchoIO {
 }
 
 func (client *b282) GetStream() io.ReadWriteCloser {
-	return client.Stream
+	return client.stream
 }
 
 func (client *b282) SetStream(stream io.ReadWriteCloser) {
-	client.Stream = stream
+	client.stream = stream
 }
 
 func (client *b282) WritePacket(packetId uint16, data []byte) error {
@@ -62,7 +63,7 @@ func (client *b282) WritePacket(packetId uint16, data []byte) error {
 
 func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.Stream)
+	packet.Id, err = readUint16(client.stream)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +75,13 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, nil
 	}
 
-	length, err := readInt32(client.Stream)
+	length, err := readInt32(client.stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.Stream.Read(compressedData)
+	n, err := client.stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -102,34 +103,41 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 	return packet, nil
 }
 
-var supportedPackets []uint16 = []uint16{
-	OsuSendUserStatus,
-	OsuSendIrcMessage,
-	OsuExit,
-	OsuRequestStatusUpdate,
-	OsuPong,
-	BanchoLoginReply,
-	BanchoCommandError,
-	BanchoSendMessage,
-	BanchoPing,
-	BanchoHandleIrcChangeUsername,
-	BanchoHandleIrcQuit,
-	BanchoHandleOsuUpdate,
-	BanchoHandleOsuQuit,
-	BanchoSpectatorJoined,
-	BanchoSpectatorLeft,
-	BanchoSpectateFrames,
-	OsuStartSpectating,
-	OsuStopSpectating,
-	OsuSpectateFrames,
-	BanchoVersionUpdate,
-	OsuErrorReport,
-	OsuCantSpectate,
-	BanchoSpectatorCantSpectate,
+func (client *b282) SupportedPackets() []uint16 {
+	if client.supportedPackets != nil {
+		return client.supportedPackets
+	}
+
+	client.supportedPackets = []uint16{
+		OsuSendUserStatus,
+		OsuSendIrcMessage,
+		OsuExit,
+		OsuRequestStatusUpdate,
+		OsuPong,
+		BanchoLoginReply,
+		BanchoCommandError,
+		BanchoSendMessage,
+		BanchoPing,
+		BanchoHandleIrcChangeUsername,
+		BanchoHandleIrcQuit,
+		BanchoHandleOsuUpdate,
+		BanchoHandleOsuQuit,
+		BanchoSpectatorJoined,
+		BanchoSpectatorLeft,
+		BanchoSpectateFrames,
+		OsuStartSpectating,
+		OsuStopSpectating,
+		OsuSpectateFrames,
+		BanchoVersionUpdate,
+		OsuErrorReport,
+		OsuCantSpectate,
+		BanchoSpectatorCantSpectate,
+	}
+	return client.supportedPackets
 }
 
 func (client *b282) ImplementsPacket(packetId uint16) bool {
-	for _, id := range supportedPackets {
+	for _, id := range client.SupportedPackets() {
 		if id == packetId {
 			return true
 		}
@@ -174,7 +182,7 @@ func (client *b282) WriteUserStats(info UserInfo) error {
 		return client.WritePacket(0xFFFF, writer.Bytes())
 	}
 
-	writeStats(writer, info)
+	client.writeStats(writer, info)
 	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
 }
 
@@ -190,7 +198,7 @@ func (client *b282) WriteUserQuit(quit UserQuit) error {
 		return nil
 	}
 
-	writeStats(writer, *quit.Info)
+	client.writeStats(writer, *quit.Info)
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
 }
 
@@ -367,7 +375,7 @@ func (client *b282) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	return frame, errors.Next()
 }
 
-func writeStatus(writer io.Writer, status *UserStatus) error {
+func (client *b282) writeStatus(writer io.Writer, status *UserStatus) error {
 	// Convert action enum
 	action := status.Action
 
@@ -389,7 +397,7 @@ func writeStatus(writer io.Writer, status *UserStatus) error {
 	return nil
 }
 
-func writeStats(writer io.Writer, info UserInfo) error {
+func (client *b282) writeStats(writer io.Writer, info UserInfo) error {
 	writeInt32(writer, info.Id)
 	writeString(writer, info.Name)
 	writeUint64(writer, info.Stats.Rscore)
@@ -398,7 +406,7 @@ func writeStats(writer io.Writer, info UserInfo) error {
 	writeUint64(writer, info.Stats.Tscore)
 	writeInt32(writer, info.Stats.Rank)
 	writeString(writer, fmt.Sprintf("%d", info.Id))
-	writeStatus(writer, info.Status)
+	client.writeStatus(writer, info.Status)
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
 	writeString(writer, info.Presence.City)
 	return nil

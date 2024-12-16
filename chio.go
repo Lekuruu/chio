@@ -36,6 +36,9 @@ type BanchoIO interface {
 	// ReadPacket reads a packet from the underlying data stream
 	ReadPacket() (packet *BanchoPacket, err error)
 
+	// SupportedPackets returns a list of packetIds that are supported by the client
+	SupportedPackets() []uint16
+
 	// ImplementsPacket checks if the packetId is implemented in the client
 	ImplementsPacket(packetId uint16) bool
 
