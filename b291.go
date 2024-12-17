@@ -302,12 +302,6 @@ func (client *b291) readStatus(reader io.Reader) (any, error) {
 		status.Mods = uint32(mods)
 	}
 
-	if status.Action == StatusIdle && status.BeatmapChecksum != "" {
-		// There is a bug where the client is playing but
-		// didn't update the status correctly
-		status.Action = StatusPlaying
-	}
-
 	return status, errors.Next()
 }
 
