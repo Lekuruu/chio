@@ -234,6 +234,11 @@ func (client *b294) WriteSpectateFrames(bundle ReplayFrameBundle) error {
 	}
 
 	writeUint8(writer, bundle.Action)
+
+	if bundle.Frame != nil {
+		client.writeScoreFrame(writer, *bundle.Frame)
+	}
+
 	return client.WritePacket(BanchoSpectateFrames, writer.Bytes())
 }
 
@@ -363,7 +368,12 @@ func (client *b294) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 		return nil, err
 	}
 
-	return &ReplayFrameBundle{Frames: frames, Action: action}, nil
+	frame, err := client.readScoreFrame(reader)
+	if err != nil && err.Error() != "EOF" {
+		return nil, err
+	}
+
+	return &ReplayFrameBundle{Frames: frames, Action: action, Frame: frame}, nil
 }
 
 func (client *b294) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
@@ -390,6 +400,40 @@ func (client *b294) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	if mouseRight {
 		frame.ButtonState |= ButtonStateRight1
 	}
+
+	return frame, errors.Next()
+}
+
+func (client b294) readScoreFrame(reader io.Reader) (*ScoreFrame, error) {
+	var err error
+	errors := NewErrorCollection()
+	frame := &ScoreFrame{}
+	_, err = readString(reader) // Checksum
+	errors.Add(err)
+	frame.Id, err = readUint8(reader)
+	errors.Add(err)
+	frame.Total300, err = readUint16(reader)
+	errors.Add(err)
+	frame.Total100, err = readUint16(reader)
+	errors.Add(err)
+	frame.Total50, err = readUint16(reader)
+	errors.Add(err)
+	frame.TotalGeki, err = readUint16(reader)
+	errors.Add(err)
+	frame.TotalKatu, err = readUint16(reader)
+	errors.Add(err)
+	frame.TotalMiss, err = readUint16(reader)
+	errors.Add(err)
+	frame.TotalScore, err = readUint32(reader)
+	errors.Add(err)
+	frame.MaxCombo, err = readUint16(reader)
+	errors.Add(err)
+	frame.CurrentCombo, err = readUint16(reader)
+	errors.Add(err)
+	frame.Perfect, err = readBoolean(reader)
+	errors.Add(err)
+	frame.Hp, err = readUint8(reader)
+	errors.Add(err)
 
 	return frame, errors.Next()
 }
@@ -428,6 +472,23 @@ func (client *b294) writeStats(writer io.Writer, info UserInfo) error {
 	client.writeStatus(writer, info.Status)
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
 	writeString(writer, info.Presence.City)
+	return nil
+}
+
+func (client *b294) writeScoreFrame(writer io.Writer, frame ScoreFrame) error {
+	writeString(writer, frame.Checksum())
+	writeUint8(writer, frame.Id)
+	writeUint16(writer, frame.Total300)
+	writeUint16(writer, frame.Total100)
+	writeUint16(writer, frame.Total50)
+	writeUint16(writer, frame.TotalGeki)
+	writeUint16(writer, frame.TotalKatu)
+	writeUint16(writer, frame.TotalMiss)
+	writeUint32(writer, frame.TotalScore)
+	writeUint16(writer, frame.MaxCombo)
+	writeUint16(writer, frame.CurrentCombo)
+	writeBoolean(writer, frame.Perfect)
+	writeUint8(writer, frame.Hp)
 	return nil
 }
 
