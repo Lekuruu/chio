@@ -117,8 +117,8 @@ type ScoreFrame struct {
 }
 
 // ScoreFrame checksum calculation used in version b323
-func (sf *ScoreFrame) GetChecksum() string {
-	hash := md5.New().Sum([]byte(
+func (sf *ScoreFrame) Checksum() string {
+	hash := md5.Sum([]byte(
 		strconv.FormatUint(uint64(sf.Time), 10) +
 			"false" + // "pass" ?
 			strconv.Itoa(int(sf.Total300)) +
