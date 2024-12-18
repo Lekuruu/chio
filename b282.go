@@ -152,7 +152,7 @@ func (client *b282) WriteLoginReply(reply int32) error {
 }
 
 func (client *b282) WriteMessage(message Message) error {
-	if message.Sender != "#osu" {
+	if message.Target != "#osu" {
 		// Private messages & channels have not been implemented yet
 		return nil
 	}
