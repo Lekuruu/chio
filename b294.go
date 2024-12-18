@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type b294 struct {
@@ -155,14 +156,17 @@ func (client *b294) WriteLoginReply(reply int32) error {
 }
 
 func (client *b294) WriteMessage(message Message) error {
-	if message.Sender != "#osu" {
-		// Private messages & channels have not been implemented yet
+	isChannel := strings.HasPrefix(message.Target, "#")
+
+	if isChannel && message.Target != "#osu" {
+		// Channel selection was not implemented yet
 		return nil
 	}
 
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, message.Sender)
 	writeString(writer, message.Content)
+	writeBoolean(writer, message.Target != "#osu") // IsPrivate
 	return client.WritePacket(BanchoSendMessage, writer.Bytes())
 }
 
