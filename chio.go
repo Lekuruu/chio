@@ -55,22 +55,22 @@ type BanchoWriters interface {
 	WriteIrcChangeUsername(oldName string, newName string) error
 	WriteUserStats(info UserInfo) error
 	WriteUserQuit(quit UserQuit) error
-	WriteSpectatorJoined(userId uint32) error
-	WriteSpectatorLeft(userId uint32) error
+	WriteSpectatorJoined(userId int32) error
+	WriteSpectatorLeft(userId int32) error
 	WriteSpectateFrames(bundle ReplayFrameBundle) error
 	WriteVersionUpdate() error
-	WriteSpectatorCantSpectate(userId uint32) error
+	WriteSpectatorCantSpectate(userId int32) error
 	WriteGetAttention() error
 	WriteAnnouncement(message string) error
 	WriteMatchUpdate(match Match) error
 	WriteMatchNew(match Match) error
 	WriteMatchDisband(matchId uint32) error
-	WriteLobbyJoin(userId uint32) error
-	WriteLobbyPart(userId uint32) error
+	WriteLobbyJoin(userId int32) error
+	WriteLobbyPart(userId int32) error
 	WriteMatchJoinSuccess(match Match) error
 	WriteMatchJoinFail() error
-	WriteFellowSpectatorJoined(userId uint32) error
-	WriteFellowSpectatorLeft(userId uint32) error
+	WriteFellowSpectatorJoined(userId int32) error
+	WriteFellowSpectatorLeft(userId int32) error
 	WriteMatchStart(match Match) error
 	WriteMatchScoreUpdate(frame ScoreFrame) error
 	WriteMatchTransferHost() error

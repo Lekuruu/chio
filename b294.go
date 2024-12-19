@@ -209,15 +209,15 @@ func (client *b294) WriteUserQuit(quit UserQuit) error {
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
 }
 
-func (client *b294) WriteSpectatorJoined(userId uint32) error {
+func (client *b294) WriteSpectatorJoined(userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
-	writeUint32(writer, userId)
+	writeInt32(writer, userId)
 	return client.WritePacket(BanchoSpectatorJoined, writer.Bytes())
 }
 
-func (client *b294) WriteSpectatorLeft(userId uint32) error {
+func (client *b294) WriteSpectatorLeft(userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
-	writeUint32(writer, userId)
+	writeInt32(writer, userId)
 	return client.WritePacket(BanchoSpectatorLeft, writer.Bytes())
 }
 
@@ -250,9 +250,9 @@ func (client *b294) WriteVersionUpdate() error {
 	return client.WritePacket(BanchoVersionUpdate, []byte{})
 }
 
-func (client *b294) WriteSpectatorCantSpectate(userId uint32) error {
+func (client *b294) WriteSpectatorCantSpectate(userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
-	writeUint32(writer, userId)
+	writeInt32(writer, userId)
 	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
 }
 
@@ -529,12 +529,12 @@ func (client *b294) WriteAnnouncement(message string) error {
 func (client *b294) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b294) WriteMatchNew(match Match) error                     { return nil }
 func (client *b294) WriteMatchDisband(matchId uint32) error              { return nil }
-func (client *b294) WriteLobbyJoin(userId uint32) error                  { return nil }
-func (client *b294) WriteLobbyPart(userId uint32) error                  { return nil }
+func (client *b294) WriteLobbyJoin(userId int32) error                   { return nil }
+func (client *b294) WriteLobbyPart(userId int32) error                   { return nil }
 func (client *b294) WriteMatchJoinSuccess(match Match) error             { return nil }
 func (client *b294) WriteMatchJoinFail() error                           { return nil }
-func (client *b294) WriteFellowSpectatorJoined(userId uint32) error      { return nil }
-func (client *b294) WriteFellowSpectatorLeft(userId uint32) error        { return nil }
+func (client *b294) WriteFellowSpectatorJoined(userId int32) error       { return nil }
+func (client *b294) WriteFellowSpectatorLeft(userId int32) error         { return nil }
 func (client *b294) WriteMatchStart(match Match) error                   { return nil }
 func (client *b294) WriteMatchScoreUpdate(frame ScoreFrame) error        { return nil }
 func (client *b294) WriteMatchTransferHost() error                       { return nil }
