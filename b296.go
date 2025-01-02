@@ -153,6 +153,10 @@ func (client *b296) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
+func (client *b296) OverrideMatchSlotSize(amount int) {
+	// Multiplayer is not supported in this version
+}
+
 func (client *b296) ConvertInputPacketId(packetId uint16) uint16 {
 	if packetId == 11 {
 		// "IrcJoin" packet

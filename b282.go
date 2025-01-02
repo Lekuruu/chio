@@ -147,6 +147,51 @@ func (client *b282) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
+func (client *b282) OverrideMatchSlotSize(amount int) {
+	// Multiplayer is not supported in this version
+}
+
+func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
+	if packetId == 11 {
+		// "IrcJoin" packet
+		return 0xFFFF
+	}
+	if packetId > 11 {
+		return packetId - 1
+	}
+	return packetId
+}
+
+func (client *b282) ConvertOutputPacketId(packetId uint16) uint16 {
+	if packetId == 0xFFFF {
+		// "IrcJoin" packet
+		return 11
+	}
+	if packetId >= 11 {
+		return packetId + 1
+	}
+	return packetId
+}
+
+func (client *b282) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
+	switch packetId {
+	case OsuSendUserStatus:
+		return client.ReadStatus(reader)
+	case OsuSendIrcMessage:
+		return client.ReadMessage(reader)
+	case OsuStartSpectating:
+		return readUint32(reader)
+	case OsuSpectateFrames:
+		return client.ReadFrameBundle(reader)
+	case OsuErrorReport:
+		return readString(reader)
+	default:
+		return nil, nil
+	}
+}
+
+/* New Packets */
+
 func (client *b282) WriteLoginReply(reply int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, reply)
@@ -244,45 +289,6 @@ func (client *b282) WriteSpectatorCantSpectate(userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
 	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
-}
-
-func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
-	if packetId == 11 {
-		// "IrcJoin" packet
-		return 0xFFFF
-	}
-	if packetId > 11 {
-		return packetId - 1
-	}
-	return packetId
-}
-
-func (client *b282) ConvertOutputPacketId(packetId uint16) uint16 {
-	if packetId == 0xFFFF {
-		// "IrcJoin" packet
-		return 11
-	}
-	if packetId >= 11 {
-		return packetId + 1
-	}
-	return packetId
-}
-
-func (client *b282) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
-	switch packetId {
-	case OsuSendUserStatus:
-		return client.ReadStatus(reader)
-	case OsuSendIrcMessage:
-		return client.ReadMessage(reader)
-	case OsuStartSpectating:
-		return readUint32(reader)
-	case OsuSpectateFrames:
-		return client.ReadFrameBundle(reader)
-	case OsuErrorReport:
-		return readString(reader)
-	default:
-		return nil, nil
-	}
 }
 
 func (client *b282) ReadStatus(reader io.Reader) (any, error) {
