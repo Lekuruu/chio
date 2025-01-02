@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// b298 adds the initial implementation of multiplayer, as well as fellow spectators
+// b298 adds a partial implementation of multiplayer, as well as fellow spectators
 type b298 struct {
 	BanchoIO
 	stream           io.ReadWriteCloser
@@ -152,6 +152,14 @@ func (client *b298) SupportedPackets() []uint16 {
 		OsuMatchCreate,
 		OsuMatchJoin,
 		OsuMatchPart,
+		BanchoLobbyJoin,
+		BanchoLobbyPart,
+		BanchoMatchJoinSuccess,
+		BanchoMatchJoinFail,
+		OsuMatchChangeSlot,
+		OsuMatchChangeSettings,
+		BanchoFellowSpectatorJoined,
+		BanchoFellowSpectatorLeft,
 	}
 	return client.supportedPackets
 }
