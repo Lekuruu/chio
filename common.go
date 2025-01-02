@@ -210,12 +210,17 @@ func readIntList32(r io.Reader) (v []int32, err error) {
 	return v, nil
 }
 
-func readBoolArray(input byte) []bool {
+func readBoolList(r io.Reader) ([]bool, error) {
+	input, err := readUint8(r)
+	if err != nil {
+		return nil, err
+	}
+
 	bools := make([]bool, 8)
 	for i := 0; i < 8; i++ {
 		bools[i] = ((input >> i) & 1) > 0
 	}
-	return bools
+	return bools, nil
 }
 
 func readString(r io.Reader) (v string, err error) {
