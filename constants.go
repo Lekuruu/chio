@@ -109,6 +109,10 @@ const (
 	BanchoSwitchTournamentServer   uint16 = 107
 	OsuTournamentJoinMatchChannel  uint16 = 108
 	OsuTournamentLeaveMatchChannel uint16 = 109
+
+	/* Packets that are unused today, but used in legacy clients */
+
+	BanchoHandleIrcJoin uint16 = 0xFFFF
 )
 
 const (

@@ -161,7 +161,7 @@ func (client *b294) OverrideMatchSlotSize(amount int) {
 func (client *b294) ConvertInputPacketId(packetId uint16) uint16 {
 	if packetId == 11 {
 		// "IrcJoin" packet
-		return 0xFFFF
+		return BanchoHandleIrcJoin
 	}
 	if packetId > 11 {
 		return packetId - 1
@@ -170,7 +170,7 @@ func (client *b294) ConvertInputPacketId(packetId uint16) uint16 {
 }
 
 func (client *b294) ConvertOutputPacketId(packetId uint16) uint16 {
-	if packetId == 0xFFFF {
+	if packetId == BanchoHandleIrcJoin {
 		// "IrcJoin" packet
 		return 11
 	}

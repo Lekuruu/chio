@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// b291 implements the GetAttension & Announce packets.
+// b291 implements the GetAttension & Announce packets
 type b291 struct {
 	BanchoIO
 	stream           io.ReadWriteCloser
@@ -157,7 +157,7 @@ func (client *b291) OverrideMatchSlotSize(amount int) {
 func (client *b291) ConvertInputPacketId(packetId uint16) uint16 {
 	if packetId == 11 {
 		// "IrcJoin" packet
-		return 0xFFFF
+		return BanchoHandleIrcJoin
 	}
 	if packetId > 11 {
 		return packetId - 1
@@ -166,7 +166,7 @@ func (client *b291) ConvertInputPacketId(packetId uint16) uint16 {
 }
 
 func (client *b291) ConvertOutputPacketId(packetId uint16) uint16 {
-	if packetId == 0xFFFF {
+	if packetId == BanchoHandleIrcJoin {
 		// "IrcJoin" packet
 		return 11
 	}

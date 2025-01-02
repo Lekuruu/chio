@@ -154,7 +154,7 @@ func (client *b282) OverrideMatchSlotSize(amount int) {
 func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
 	if packetId == 11 {
 		// "IrcJoin" packet
-		return 0xFFFF
+		return BanchoHandleIrcJoin
 	}
 	if packetId > 11 {
 		return packetId - 1
@@ -163,7 +163,7 @@ func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
 }
 
 func (client *b282) ConvertOutputPacketId(packetId uint16) uint16 {
-	if packetId == 0xFFFF {
+	if packetId == BanchoHandleIrcJoin {
 		// "IrcJoin" packet
 		return 11
 	}
@@ -224,9 +224,8 @@ func (client *b282) WriteUserStats(info UserInfo) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if info.Presence.IsIrc {
-		// Write "IrcJoin" packet
 		writeString(writer, info.Name)
-		return client.WritePacket(0xFFFF, writer.Bytes())
+		return client.WritePacket(BanchoHandleIrcJoin, writer.Bytes())
 	}
 
 	client.WriteStats(writer, info)
