@@ -78,6 +78,23 @@ func writeIntList32(w io.Writer, v []int32) error {
 	return nil
 }
 
+func writeBoolList(w io.Writer, bools []bool) error {
+	if len(bools) < 8 {
+		return errors.New("bool list must have at least 8 elements")
+	}
+
+	var result byte
+	for i := 7; i >= 0; i-- {
+		if bools[i] {
+			result |= 1
+		}
+		if i > 0 {
+			result <<= 1
+		}
+	}
+	return writeUint8(w, result)
+}
+
 func writeString(w io.Writer, v string) error {
 	if v == "" {
 		binary.Write(w, binary.LittleEndian, uint8(0x00))
@@ -191,6 +208,14 @@ func readIntList32(r io.Reader) (v []int32, err error) {
 	}
 
 	return v, nil
+}
+
+func readBoolArray(input byte) []bool {
+	bools := make([]bool, 8)
+	for i := 0; i < 8; i++ {
+		bools[i] = ((input >> i) & 1) > 0
+	}
+	return bools
 }
 
 func readString(r io.Reader) (v string, err error) {
