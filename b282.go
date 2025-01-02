@@ -392,9 +392,13 @@ func (client *b282) WriteStatus(writer io.Writer, status *UserStatus) error {
 	}
 
 	writeUint8(writer, action)
-	writeString(writer, status.Text)
-	writeString(writer, status.BeatmapChecksum)
-	writeUint32(writer, status.Mods)
+
+	if action != StatusUnknown {
+		writeString(writer, status.Text)
+		writeString(writer, status.BeatmapChecksum)
+		writeUint16(writer, uint16(status.Mods))
+	}
+
 	return nil
 }
 
@@ -406,7 +410,7 @@ func (client *b282) WriteStats(writer io.Writer, info UserInfo) error {
 	writeInt32(writer, info.Stats.Playcount)
 	writeUint64(writer, info.Stats.Tscore)
 	writeInt32(writer, info.Stats.Rank)
-	writeString(writer, fmt.Sprintf("%d", info.Id))
+	writeString(writer, fmt.Sprintf("%d.png", info.Id))
 	client.WriteStatus(writer, info.Status)
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
 	writeString(writer, info.Presence.City)
