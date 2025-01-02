@@ -388,14 +388,6 @@ func (client *b294) WriteSpectatorLeft(userId int32) error {
 	return client.previous.WriteSpectatorLeft(userId)
 }
 
-func (client *b294) ReadStatus(reader io.Reader) (any, error) {
-	return client.previous.ReadStatus(reader)
-}
-
-func (client *b294) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
-	return client.previous.ReadReplayFrame(reader)
-}
-
 func (client *b294) WriteStatus(writer io.Writer, status *UserStatus) error {
 	return client.previous.WriteStatus(writer, status)
 }
@@ -422,6 +414,14 @@ func (client *b294) WriteGetAttention() error {
 
 func (client *b294) WriteAnnouncement(message string) error {
 	return client.previous.WriteAnnouncement(message)
+}
+
+func (client *b294) ReadStatus(reader io.Reader) (any, error) {
+	return client.previous.ReadStatus(reader)
+}
+
+func (client *b294) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
+	return client.previous.ReadReplayFrame(reader)
 }
 
 /* Unsupported Packets */
