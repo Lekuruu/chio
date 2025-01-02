@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// b296 changes the structure of score frames
+// b296 adds the "Time" value to score frames
 type b296 struct {
 	BanchoIO
 	stream           io.ReadWriteCloser
