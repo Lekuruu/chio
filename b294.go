@@ -7,10 +7,12 @@ import (
 	"strings"
 )
 
+// b294 implements private messages, as well as score frames in spectating
 type b294 struct {
 	BanchoIO
 	stream           io.ReadWriteCloser
 	supportedPackets []uint16
+	previous         *b291
 }
 
 func (client *b294) Write(p []byte) (n int, err error) {
@@ -26,7 +28,9 @@ func (client *b294) Close() error {
 }
 
 func (client *b294) Clone() BanchoIO {
-	return &b294{}
+	previous := &b291{}
+	clone := previous.Clone()
+	return &b294{previous: clone.(*b291)}
 }
 
 func (client *b294) GetStream() io.ReadWriteCloser {
@@ -35,11 +39,12 @@ func (client *b294) GetStream() io.ReadWriteCloser {
 
 func (client *b294) SetStream(stream io.ReadWriteCloser) {
 	client.stream = stream
+	client.previous.SetStream(stream)
 }
 
 func (client *b294) WritePacket(packetId uint16, data []byte) error {
 	// Convert packetId back for the client
-	packetId = client.convertOutputPacketId(packetId)
+	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
 
 	err := writeUint16(writer, packetId)
@@ -70,7 +75,7 @@ func (client *b294) ReadPacket() (packet *BanchoPacket, err error) {
 	}
 
 	// Convert packet ID to a usable value
-	packet.Id = client.convertInputPacketId(packet.Id)
+	packet.Id = client.ConvertInputPacketId(packet.Id)
 
 	if !client.ImplementsPacket(packet.Id) {
 		return nil, nil
@@ -96,7 +101,7 @@ func (client *b294) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, err
 	}
 
-	packet.Data, err = client.readPacketType(packet.Id, bytes.NewReader(data))
+	packet.Data, err = client.ReadPacketType(packet.Id, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -149,11 +154,48 @@ func (client *b294) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b294) WriteLoginReply(reply int32) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeInt32(writer, reply)
-	return client.WritePacket(BanchoLoginReply, writer.Bytes())
+func (client *b294) ConvertInputPacketId(packetId uint16) uint16 {
+	if packetId == 11 {
+		// "IrcJoin" packet
+		return 0xFFFF
+	}
+	if packetId > 11 {
+		return packetId - 1
+	}
+	return packetId
 }
+
+func (client *b294) ConvertOutputPacketId(packetId uint16) uint16 {
+	if packetId == 0xFFFF {
+		// "IrcJoin" packet
+		return 11
+	}
+	if packetId >= 11 {
+		return packetId + 1
+	}
+	return packetId
+}
+
+func (client *b294) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
+	switch packetId {
+	case OsuSendUserStatus:
+		return client.ReadStatus(reader)
+	case OsuSendIrcMessage:
+		return client.ReadMessage(reader)
+	case OsuStartSpectating:
+		return readUint32(reader)
+	case OsuSpectateFrames:
+		return client.ReadFrameBundle(reader)
+	case OsuErrorReport:
+		return readString(reader)
+	case OsuSendIrcMessagePrivate:
+		return client.ReadMessagePrivate(reader)
+	default:
+		return nil, nil
+	}
+}
+
+/* New Packets */
 
 func (client *b294) WriteMessage(message Message) error {
 	isChannel := strings.HasPrefix(message.Target, "#")
@@ -170,154 +212,7 @@ func (client *b294) WriteMessage(message Message) error {
 	return client.WritePacket(BanchoSendMessage, writer.Bytes())
 }
 
-func (client *b294) WritePing() error {
-	return client.WritePacket(BanchoPing, []byte{})
-}
-
-func (client *b294) WriteIrcChangeUsername(oldName string, newName string) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeString(writer, fmt.Sprintf("%s>>>>%s", oldName, newName))
-	return client.WritePacket(BanchoHandleIrcChangeUsername, writer.Bytes())
-}
-
-func (client *b294) WriteUserStats(info UserInfo) error {
-	writer := bytes.NewBuffer([]byte{})
-
-	if info.Presence.IsIrc {
-		// Write "IrcJoin" packet
-		writeString(writer, info.Name)
-		return client.WritePacket(0xFFFF, writer.Bytes())
-	}
-
-	client.writeStats(writer, info)
-	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
-}
-
-func (client *b294) WriteUserQuit(quit UserQuit) error {
-	writer := bytes.NewBuffer([]byte{})
-
-	if quit.Info.Presence.IsIrc && quit.QuitState != QuitStateIrcRemaining {
-		writeString(writer, quit.Info.Name)
-		return client.WritePacket(BanchoHandleIrcQuit, writer.Bytes())
-	}
-
-	if quit.QuitState == QuitStateOsuRemaining {
-		return nil
-	}
-
-	client.writeStats(writer, *quit.Info)
-	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
-}
-
-func (client *b294) WriteSpectatorJoined(userId int32) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeInt32(writer, userId)
-	return client.WritePacket(BanchoSpectatorJoined, writer.Bytes())
-}
-
-func (client *b294) WriteSpectatorLeft(userId int32) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeInt32(writer, userId)
-	return client.WritePacket(BanchoSpectatorLeft, writer.Bytes())
-}
-
-func (client *b294) WriteSpectateFrames(bundle ReplayFrameBundle) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeUint16(writer, uint16(len(bundle.Frames)))
-
-	for _, frame := range bundle.Frames {
-		// Convert button state
-		leftMouse := ButtonStateLeft1&frame.ButtonState > 0 || ButtonStateLeft2&frame.ButtonState > 0
-		rightMouse := ButtonStateRight1&frame.ButtonState > 0 || ButtonStateRight2&frame.ButtonState > 0
-
-		writeBoolean(writer, leftMouse)
-		writeBoolean(writer, rightMouse)
-		writeFloat32(writer, frame.MouseX)
-		writeFloat32(writer, frame.MouseY)
-		writeInt32(writer, frame.Time)
-	}
-
-	writeUint8(writer, bundle.Action)
-
-	if bundle.Frame != nil {
-		client.writeScoreFrame(writer, *bundle.Frame)
-	}
-
-	return client.WritePacket(BanchoSpectateFrames, writer.Bytes())
-}
-
-func (client *b294) WriteVersionUpdate() error {
-	return client.WritePacket(BanchoVersionUpdate, []byte{})
-}
-
-func (client *b294) WriteSpectatorCantSpectate(userId int32) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeInt32(writer, userId)
-	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
-}
-
-func (client *b294) convertInputPacketId(packetId uint16) uint16 {
-	if packetId == 11 {
-		// "IrcJoin" packet
-		return 0xFFFF
-	}
-	if packetId > 11 {
-		return packetId - 1
-	}
-	return packetId
-}
-
-func (client *b294) convertOutputPacketId(packetId uint16) uint16 {
-	if packetId == 0xFFFF {
-		// "IrcJoin" packet
-		return 11
-	}
-	if packetId >= 11 {
-		return packetId + 1
-	}
-	return packetId
-}
-
-func (client *b294) readPacketType(packetId uint16, reader io.Reader) (any, error) {
-	switch packetId {
-	case OsuSendUserStatus:
-		return client.readStatus(reader)
-	case OsuSendIrcMessage:
-		return client.readMessage(reader)
-	case OsuStartSpectating:
-		return readUint32(reader)
-	case OsuSpectateFrames:
-		return client.readFrameBundle(reader)
-	case OsuErrorReport:
-		return readString(reader)
-	case OsuSendIrcMessagePrivate:
-		return client.readMessagePrivate(reader)
-	default:
-		return nil, nil
-	}
-}
-
-func (client *b294) readStatus(reader io.Reader) (any, error) {
-	var err error
-	errors := NewErrorCollection()
-	status := UserStatus{}
-	status.Action, err = readUint8(reader)
-	errors.Add(err)
-
-	if status.Action != StatusUnknown {
-		status.Text, err = readString(reader)
-		errors.Add(err)
-		status.BeatmapChecksum, err = readString(reader)
-		errors.Add(err)
-		mods, err := readUint16(reader)
-		errors.Add(err)
-		status.Mods = uint32(mods)
-	}
-
-	return status, errors.Next()
-}
-
-func (client *b294) readMessage(reader io.Reader) (*Message, error) {
+func (client *b294) ReadMessage(reader io.Reader) (*Message, error) {
 	content, err := readString(reader)
 	if err != nil {
 		return nil, err
@@ -325,7 +220,7 @@ func (client *b294) readMessage(reader io.Reader) (*Message, error) {
 	return &Message{Content: content, Target: "#osu"}, nil
 }
 
-func (client *b294) readMessagePrivate(reader io.Reader) (*Message, error) {
+func (client *b294) ReadMessagePrivate(reader io.Reader) (*Message, error) {
 	var err error
 	message := &Message{}
 	message.Sender = ""
@@ -352,7 +247,49 @@ func (client *b294) readMessagePrivate(reader io.Reader) (*Message, error) {
 	return message, nil
 }
 
-func (client *b294) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
+func (client *b294) WriteSpectateFrames(bundle ReplayFrameBundle) error {
+	writer := bytes.NewBuffer([]byte{})
+	writeUint16(writer, uint16(len(bundle.Frames)))
+
+	for _, frame := range bundle.Frames {
+		// Convert button state
+		leftMouse := ButtonStateLeft1&frame.ButtonState > 0 || ButtonStateLeft2&frame.ButtonState > 0
+		rightMouse := ButtonStateRight1&frame.ButtonState > 0 || ButtonStateRight2&frame.ButtonState > 0
+
+		writeBoolean(writer, leftMouse)
+		writeBoolean(writer, rightMouse)
+		writeFloat32(writer, frame.MouseX)
+		writeFloat32(writer, frame.MouseY)
+		writeInt32(writer, frame.Time)
+	}
+
+	writeUint8(writer, bundle.Action)
+
+	if bundle.Frame != nil {
+		client.WriteScoreFrame(writer, *bundle.Frame)
+	}
+
+	return client.WritePacket(BanchoSpectateFrames, writer.Bytes())
+}
+
+func (client *b294) WriteScoreFrame(writer io.Writer, frame ScoreFrame) error {
+	writeString(writer, frame.Checksum())
+	writeUint8(writer, frame.Id)
+	writeUint16(writer, frame.Total300)
+	writeUint16(writer, frame.Total100)
+	writeUint16(writer, frame.Total50)
+	writeUint16(writer, frame.TotalGeki)
+	writeUint16(writer, frame.TotalKatu)
+	writeUint16(writer, frame.TotalMiss)
+	writeUint32(writer, frame.TotalScore)
+	writeUint16(writer, frame.MaxCombo)
+	writeUint16(writer, frame.CurrentCombo)
+	writeBoolean(writer, frame.Perfect)
+	writeUint8(writer, frame.Hp)
+	return nil
+}
+
+func (client *b294) ReadFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
 	count, err := readUint16(reader)
 	if err != nil {
 		return nil, err
@@ -360,7 +297,7 @@ func (client *b294) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 
 	frames := make([]*ReplayFrame, count)
 	for i := 0; i < int(count); i++ {
-		frame, err := client.readReplayFrame(reader)
+		frame, err := client.ReadReplayFrame(reader)
 		if err != nil {
 			return nil, err
 		}
@@ -372,7 +309,7 @@ func (client *b294) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 		return nil, err
 	}
 
-	frame, err := client.readScoreFrame(reader)
+	frame, err := client.ReadScoreFrame(reader)
 	if err != nil && err.Error() != "EOF" {
 		return nil, err
 	}
@@ -380,35 +317,7 @@ func (client *b294) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 	return &ReplayFrameBundle{Frames: frames, Action: action, Frame: frame}, nil
 }
 
-func (client *b294) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
-	var err error
-	errors := NewErrorCollection()
-	frame := &ReplayFrame{}
-	mouseLeft, err := readBoolean(reader)
-	errors.Add(err)
-	mouseRight, err := readBoolean(reader)
-	errors.Add(err)
-	frame.MouseX, err = readFloat32(reader)
-	errors.Add(err)
-	frame.MouseY, err = readFloat32(reader)
-	errors.Add(err)
-	frame.Time, err = readInt32(reader)
-	errors.Add(err)
-
-	frame.ButtonState = 0
-	frame.LegacyByte = 0
-
-	if mouseLeft {
-		frame.ButtonState |= ButtonStateLeft1
-	}
-	if mouseRight {
-		frame.ButtonState |= ButtonStateRight1
-	}
-
-	return frame, errors.Next()
-}
-
-func (client b294) readScoreFrame(reader io.Reader) (*ScoreFrame, error) {
+func (client b294) ReadScoreFrame(reader io.Reader) (*ScoreFrame, error) {
 	var err error
 	errors := NewErrorCollection()
 	frame := &ScoreFrame{}
@@ -438,94 +347,85 @@ func (client b294) readScoreFrame(reader io.Reader) (*ScoreFrame, error) {
 	errors.Add(err)
 	frame.Hp, err = readUint8(reader)
 	errors.Add(err)
-
 	return frame, errors.Next()
 }
 
-func (client *b294) writeStatus(writer io.Writer, status *UserStatus) error {
-	// Convert action enum
-	action := status.Action
+/* Inherited Packets */
 
-	if action > StatusSubmitting {
-		// Actions after "StatusSubmitting" are not supported
-		action = StatusUnknown
-	}
-
-	if status.UpdateStats {
-		// This will make the client update the user's stats
-		// It will not be present in later versions
-		action = StatusStatsUpdate
-	}
-
-	writeUint8(writer, action)
-	writeString(writer, status.Text)
-	writeString(writer, status.BeatmapChecksum)
-	writeUint32(writer, status.Mods)
-	return nil
+func (client *b294) WriteVersionUpdate() error {
+	return client.previous.WriteVersionUpdate()
 }
 
-func (client *b294) writeStats(writer io.Writer, info UserInfo) error {
-	writeInt32(writer, info.Id)
-	writeString(writer, info.Name)
-	writeUint64(writer, info.Stats.Rscore)
-	writeFloat64(writer, info.Stats.Accuracy)
-	writeInt32(writer, info.Stats.Playcount)
-	writeUint64(writer, info.Stats.Tscore)
-	writeInt32(writer, info.Stats.Rank)
-	writeString(writer, fmt.Sprintf("%d", info.Id))
-	client.writeStatus(writer, info.Status)
-	writeUint8(writer, uint8(info.Presence.Timezone+24))
-	writeString(writer, info.Presence.City)
-	return nil
+func (client *b294) WriteSpectatorCantSpectate(userId int32) error {
+	return client.previous.WriteSpectatorCantSpectate(userId)
 }
 
-func (client *b294) writeScoreFrame(writer io.Writer, frame ScoreFrame) error {
-	writeString(writer, frame.Checksum())
-	writeUint8(writer, frame.Id)
-	writeUint16(writer, frame.Total300)
-	writeUint16(writer, frame.Total100)
-	writeUint16(writer, frame.Total50)
-	writeUint16(writer, frame.TotalGeki)
-	writeUint16(writer, frame.TotalKatu)
-	writeUint16(writer, frame.TotalMiss)
-	writeUint32(writer, frame.TotalScore)
-	writeUint16(writer, frame.MaxCombo)
-	writeUint16(writer, frame.CurrentCombo)
-	writeBoolean(writer, frame.Perfect)
-	writeUint8(writer, frame.Hp)
-	return nil
+func (client *b294) WriteLoginReply(reply int32) error {
+	return client.previous.WriteLoginReply(reply)
 }
 
-// Redirect UserPresence packets to UserStats
+func (client *b294) WritePing() error {
+	return client.previous.WritePing()
+}
+
+func (client *b294) WriteIrcChangeUsername(oldName string, newName string) error {
+	return client.previous.WriteIrcChangeUsername(oldName, newName)
+}
+
+func (client *b294) WriteUserStats(info UserInfo) error {
+	return client.previous.WriteUserStats(info)
+}
+
+func (client *b294) WriteUserQuit(quit UserQuit) error {
+	return client.previous.WriteUserQuit(quit)
+}
+
+func (client *b294) WriteSpectatorJoined(userId int32) error {
+	return client.previous.WriteSpectatorJoined(userId)
+}
+
+func (client *b294) WriteSpectatorLeft(userId int32) error {
+	return client.previous.WriteSpectatorLeft(userId)
+}
+
+func (client *b294) ReadStatus(reader io.Reader) (any, error) {
+	return client.previous.ReadStatus(reader)
+}
+
+func (client *b294) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
+	return client.previous.ReadReplayFrame(reader)
+}
+
+func (client *b294) WriteStatus(writer io.Writer, status *UserStatus) error {
+	return client.previous.WriteStatus(writer, status)
+}
+
+func (client *b294) WriteStats(writer io.Writer, info UserInfo) error {
+	return client.previous.WriteStats(writer, info)
+}
+
 func (client *b294) WriteUserPresence(info UserInfo) error {
-	return client.WriteUserStats(info)
+	return client.previous.WriteUserPresence(info)
 }
 
 func (client *b294) WriteUserPresenceSingle(info UserInfo) error {
-	return client.WriteUserPresence(info)
+	return client.previous.WriteUserPresenceSingle(info)
 }
 
 func (client *b294) WriteUserPresenceBundle(infos []UserInfo) error {
-	for _, info := range infos {
-		err := client.WriteUserPresence(info)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return client.previous.WriteUserPresenceBundle(infos)
 }
 
 func (client *b294) WriteGetAttention() error {
-	return client.WritePacket(BanchoGetAttention, []byte{})
+	return client.previous.WriteGetAttention()
 }
 
 func (client *b294) WriteAnnouncement(message string) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeString(writer, message)
-	return client.WritePacket(BanchoAnnounce, writer.Bytes())
+	return client.previous.WriteAnnouncement(message)
 }
 
-// Unsupported Packets
+/* Unsupported Packets */
+
 func (client *b294) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b294) WriteMatchNew(match Match) error                     { return nil }
 func (client *b294) WriteMatchDisband(matchId uint32) error              { return nil }

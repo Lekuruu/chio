@@ -6,6 +6,8 @@ import (
 	"io"
 )
 
+// b282 is the initial implementation of the bancho protocol.
+// Every following version will be based on it.
 type b282 struct {
 	BanchoIO
 	stream           io.ReadWriteCloser
@@ -38,7 +40,7 @@ func (client *b282) SetStream(stream io.ReadWriteCloser) {
 
 func (client *b282) WritePacket(packetId uint16, data []byte) error {
 	// Convert packetId back for the client
-	packetId = client.convertOutputPacketId(packetId)
+	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
 
 	err := writeUint16(writer, packetId)
@@ -69,7 +71,7 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 	}
 
 	// Convert packet ID to a usable value
-	packet.Id = client.convertInputPacketId(packet.Id)
+	packet.Id = client.ConvertInputPacketId(packet.Id)
 
 	if !client.ImplementsPacket(packet.Id) {
 		return nil, nil
@@ -95,7 +97,7 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, err
 	}
 
-	packet.Data, err = client.readPacketType(packet.Id, bytes.NewReader(data))
+	packet.Data, err = client.ReadPacketType(packet.Id, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +184,7 @@ func (client *b282) WriteUserStats(info UserInfo) error {
 		return client.WritePacket(0xFFFF, writer.Bytes())
 	}
 
-	client.writeStats(writer, info)
+	client.WriteStats(writer, info)
 	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
 }
 
@@ -198,7 +200,7 @@ func (client *b282) WriteUserQuit(quit UserQuit) error {
 		return nil
 	}
 
-	client.writeStats(writer, *quit.Info)
+	client.WriteStats(writer, *quit.Info)
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
 }
 
@@ -244,7 +246,7 @@ func (client *b282) WriteSpectatorCantSpectate(userId int32) error {
 	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
 }
 
-func (client *b282) convertInputPacketId(packetId uint16) uint16 {
+func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
 	if packetId == 11 {
 		// "IrcJoin" packet
 		return 0xFFFF
@@ -255,7 +257,7 @@ func (client *b282) convertInputPacketId(packetId uint16) uint16 {
 	return packetId
 }
 
-func (client *b282) convertOutputPacketId(packetId uint16) uint16 {
+func (client *b282) ConvertOutputPacketId(packetId uint16) uint16 {
 	if packetId == 0xFFFF {
 		// "IrcJoin" packet
 		return 11
@@ -266,16 +268,16 @@ func (client *b282) convertOutputPacketId(packetId uint16) uint16 {
 	return packetId
 }
 
-func (client *b282) readPacketType(packetId uint16, reader io.Reader) (any, error) {
+func (client *b282) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
 	switch packetId {
 	case OsuSendUserStatus:
-		return client.readStatus(reader)
+		return client.ReadStatus(reader)
 	case OsuSendIrcMessage:
-		return client.readMessage(reader)
+		return client.ReadMessage(reader)
 	case OsuStartSpectating:
 		return readUint32(reader)
 	case OsuSpectateFrames:
-		return client.readFrameBundle(reader)
+		return client.ReadFrameBundle(reader)
 	case OsuErrorReport:
 		return readString(reader)
 	default:
@@ -283,7 +285,7 @@ func (client *b282) readPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-func (client *b282) readStatus(reader io.Reader) (any, error) {
+func (client *b282) ReadStatus(reader io.Reader) (any, error) {
 	var err error
 	errors := NewErrorCollection()
 	status := UserStatus{}
@@ -303,7 +305,7 @@ func (client *b282) readStatus(reader io.Reader) (any, error) {
 	return status, errors.Next()
 }
 
-func (client *b282) readMessage(reader io.Reader) (*Message, error) {
+func (client *b282) ReadMessage(reader io.Reader) (*Message, error) {
 	var err error
 	message := &Message{}
 	message.Content, err = readString(reader)
@@ -318,7 +320,7 @@ func (client *b282) readMessage(reader io.Reader) (*Message, error) {
 	return message, nil
 }
 
-func (client *b282) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
+func (client *b282) ReadFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
 	count, err := readUint16(reader)
 	if err != nil {
 		return nil, err
@@ -326,7 +328,7 @@ func (client *b282) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 
 	frames := make([]*ReplayFrame, count)
 	for i := 0; i < int(count); i++ {
-		frame, err := client.readReplayFrame(reader)
+		frame, err := client.ReadReplayFrame(reader)
 		if err != nil {
 			return nil, err
 		}
@@ -341,7 +343,7 @@ func (client *b282) readFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 	return &ReplayFrameBundle{Frames: frames, Action: action}, nil
 }
 
-func (client *b282) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
+func (client *b282) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	var err error
 	errors := NewErrorCollection()
 	frame := &ReplayFrame{}
@@ -369,7 +371,7 @@ func (client *b282) readReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	return frame, errors.Next()
 }
 
-func (client *b282) writeStatus(writer io.Writer, status *UserStatus) error {
+func (client *b282) WriteStatus(writer io.Writer, status *UserStatus) error {
 	// Convert action enum
 	action := status.Action
 
@@ -391,7 +393,7 @@ func (client *b282) writeStatus(writer io.Writer, status *UserStatus) error {
 	return nil
 }
 
-func (client *b282) writeStats(writer io.Writer, info UserInfo) error {
+func (client *b282) WriteStats(writer io.Writer, info UserInfo) error {
 	writeInt32(writer, info.Id)
 	writeString(writer, info.Name)
 	writeUint64(writer, info.Stats.Rscore)
@@ -400,7 +402,7 @@ func (client *b282) writeStats(writer io.Writer, info UserInfo) error {
 	writeUint64(writer, info.Stats.Tscore)
 	writeInt32(writer, info.Stats.Rank)
 	writeString(writer, fmt.Sprintf("%d", info.Id))
-	client.writeStatus(writer, info.Status)
+	client.WriteStatus(writer, info.Status)
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
 	writeString(writer, info.Presence.City)
 	return nil
@@ -425,7 +427,8 @@ func (client *b282) WriteUserPresenceBundle(infos []UserInfo) error {
 	return nil
 }
 
-// Unsupported Packets
+/* Unsupported Packets */
+
 func (client *b282) WriteGetAttention() error                            { return nil }
 func (client *b282) WriteAnnouncement(message string) error              { return nil }
 func (client *b282) WriteMatchUpdate(match Match) error                  { return nil }
