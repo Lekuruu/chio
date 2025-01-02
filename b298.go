@@ -317,7 +317,7 @@ func (client *b298) WriteFellowSpectatorLeft(userId int32) error {
 	return client.WritePacket(BanchoFellowSpectatorLeft, writer.Bytes())
 }
 
-func (client *b298) ReadMatch(reader io.Reader) (any, error) {
+func (client *b298) ReadMatch(reader io.Reader) (Match, error) {
 	var err error
 	errors := NewErrorCollection()
 	match := Match{}
