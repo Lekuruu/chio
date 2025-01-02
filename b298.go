@@ -340,8 +340,8 @@ func (client *b298) ReadMatch(reader io.Reader) (any, error) {
 		slot := &MatchSlot{}
 		slot.Status = SlotStatusOpen
 		slot.Team = SlotTeamNeutral
+		slot.Mods = NoMod
 		slot.UserId = -1
-		slot.Mods = 0
 
 		if slotsOpen[i] {
 			slot.Status = SlotStatusOpen
