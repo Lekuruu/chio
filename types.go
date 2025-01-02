@@ -3,6 +3,7 @@ package chio
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 )
 
@@ -12,6 +13,11 @@ type UserInfo struct {
 	Presence *UserPresence
 	Status   *UserStatus
 	Stats    *UserStats
+}
+
+func (u *UserInfo) AvatarFilename() string {
+	// Hopefully this is the right way to do it
+	return fmt.Sprintf("%d_000.png", u.Id)
 }
 
 type UserPresence struct {
