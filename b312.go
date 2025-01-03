@@ -9,41 +9,12 @@ import (
 // b312 adds the match start & update packets, as well
 // as the "InProgress" boolean inside the match struct
 type b312 struct {
-	BanchoIO
-	stream           io.ReadWriteCloser
-	previous         *b298
-	slotSize         int
-	supportedPackets []uint16
-}
-
-func (client *b312) Write(p []byte) (n int, err error) {
-	return client.stream.Write(p)
-}
-
-func (client *b312) Read(p []byte) (n int, err error) {
-	return client.stream.Read(p)
-}
-
-func (client *b312) Close() error {
-	return client.stream.Close()
+	*b298
 }
 
 func (client *b312) Clone() BanchoIO {
-	previous := &b298{}
-	clone := previous.Clone()
-	return &b312{
-		previous: clone.(*b298),
-		slotSize: 8,
-	}
-}
-
-func (client *b312) GetStream() io.ReadWriteCloser {
-	return client.stream
-}
-
-func (client *b312) SetStream(stream io.ReadWriteCloser) {
-	client.stream = stream
-	client.previous.SetStream(stream)
+	previous := b298{}
+	return &b312{previous.Clone().(*b298)}
 }
 
 func (client *b312) WritePacket(packetId uint16, data []byte) error {
@@ -181,47 +152,20 @@ func (client *b312) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b312) OverrideMatchSlotSize(amount int) {
-	client.slotSize = amount
-	client.previous.OverrideMatchSlotSize(amount)
-}
-
-func (client *b312) ConvertInputPacketId(packetId uint16) uint16 {
-	if packetId == 11 {
-		// "IrcJoin" packet
-		return BanchoHandleIrcJoin
-	}
-	if packetId > 11 && packetId <= 45 {
-		packetId -= 1
-	}
-	return packetId
-}
-
-func (client *b312) ConvertOutputPacketId(packetId uint16) uint16 {
-	if packetId == BanchoHandleIrcJoin {
-		// "IrcJoin" packet
-		return 11
-	}
-	if packetId >= 11 && packetId < 45 {
-		packetId += 1
-	}
-	return packetId
-}
-
 func (client *b312) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
 	switch packetId {
 	case OsuSendUserStatus:
 		return client.ReadStatus(reader)
 	case OsuSendIrcMessage:
 		return client.ReadMessage(reader)
+	case OsuSendIrcMessagePrivate:
+		return client.ReadMessagePrivate(reader)
 	case OsuStartSpectating:
 		return readUint32(reader)
 	case OsuSpectateFrames:
 		return client.ReadFrameBundle(reader)
 	case OsuErrorReport:
 		return readString(reader)
-	case OsuSendIrcMessagePrivate:
-		return client.ReadMessagePrivate(reader)
 	case OsuMatchCreate:
 		return client.ReadMatch(reader)
 	case OsuMatchJoin:
@@ -366,163 +310,3 @@ func (client *b312) ReadMatch(reader io.Reader) (*Match, error) {
 
 	return match, errors.Next()
 }
-
-/* Inherited Packets */
-
-func (client *b312) WriteMessage(message Message) error {
-	return client.previous.WriteMessage(message)
-}
-
-func (client *b312) WriteVersionUpdate() error {
-	return client.previous.WriteVersionUpdate()
-}
-
-func (client *b312) WriteLoginReply(reply int32) error {
-	return client.previous.WriteLoginReply(reply)
-}
-
-func (client *b312) WritePing() error {
-	return client.previous.WritePing()
-}
-
-func (client *b312) WriteIrcChangeUsername(oldName string, newName string) error {
-	return client.previous.WriteIrcChangeUsername(oldName, newName)
-}
-
-func (client *b312) WriteUserStats(info UserInfo) error {
-	return client.previous.WriteUserStats(info)
-}
-
-func (client *b312) WriteUserQuit(quit UserQuit) error {
-	return client.previous.WriteUserQuit(quit)
-}
-
-func (client *b312) WriteSpectateFrames(bundle ReplayFrameBundle) error {
-	return client.previous.WriteSpectateFrames(bundle)
-}
-
-func (client *b312) WriteSpectatorJoined(userId int32) error {
-	return client.previous.WriteSpectatorJoined(userId)
-}
-
-func (client *b312) WriteSpectatorLeft(userId int32) error {
-	return client.previous.WriteSpectatorLeft(userId)
-}
-
-func (client *b312) WriteSpectatorCantSpectate(userId int32) error {
-	return client.previous.WriteSpectatorCantSpectate(userId)
-}
-
-func (client *b312) WriteScoreFrame(writer io.Writer, frame ScoreFrame) error {
-	return client.previous.WriteScoreFrame(writer, frame)
-}
-
-func (client *b312) WriteStatus(writer io.Writer, status *UserStatus) error {
-	return client.previous.WriteStatus(writer, status)
-}
-
-func (client *b312) WriteStats(writer io.Writer, info UserInfo) error {
-	return client.previous.WriteStats(writer, info)
-}
-
-func (client *b312) WriteUserPresence(info UserInfo) error {
-	return client.previous.WriteUserPresence(info)
-}
-
-func (client *b312) WriteUserPresenceSingle(info UserInfo) error {
-	return client.previous.WriteUserPresenceSingle(info)
-}
-
-func (client *b312) WriteUserPresenceBundle(infos []UserInfo) error {
-	return client.previous.WriteUserPresenceBundle(infos)
-}
-
-func (client *b312) WriteGetAttention() error {
-	return client.previous.WriteGetAttention()
-}
-
-func (client *b312) WriteAnnouncement(message string) error {
-	return client.previous.WriteAnnouncement(message)
-}
-
-func (client *b312) WriteMatchDisband(matchId int32) error {
-	return client.previous.WriteMatchDisband(matchId)
-}
-
-func (client *b312) WriteLobbyJoin(userId int32) error {
-	return client.previous.WriteLobbyJoin(userId)
-}
-
-func (client *b312) WriteLobbyPart(userId int32) error {
-	return client.previous.WriteLobbyPart(userId)
-}
-
-func (client *b312) WriteMatchJoinFail() error {
-	return client.previous.WriteMatchJoinFail()
-}
-
-func (client *b312) WriteFellowSpectatorJoined(userId int32) error {
-	return client.previous.WriteFellowSpectatorJoined(userId)
-}
-
-func (client *b312) WriteFellowSpectatorLeft(userId int32) error {
-	return client.previous.WriteFellowSpectatorLeft(userId)
-}
-
-func (client *b312) ReadStatus(reader io.Reader) (*UserStatus, error) {
-	return client.previous.ReadStatus(reader)
-}
-
-func (client *b312) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
-	return client.previous.ReadReplayFrame(reader)
-}
-
-func (client *b312) ReadMessage(reader io.Reader) (*Message, error) {
-	return client.previous.ReadMessage(reader)
-}
-
-func (client *b312) ReadMessagePrivate(reader io.Reader) (*Message, error) {
-	return client.previous.ReadMessagePrivate(reader)
-}
-
-func (client b312) ReadScoreFrame(reader io.Reader) (*ScoreFrame, error) {
-	return client.previous.ReadScoreFrame(reader)
-}
-
-func (client *b312) ReadFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
-	return client.previous.ReadFrameBundle(reader)
-}
-
-/* Unsupported Packets */
-
-func (client *b312) WriteMatchTransferHost() error                       { return nil }
-func (client *b312) WriteMatchAllPlayersLoaded() error                   { return nil }
-func (client *b312) WriteMatchPlayerFailed(slotId uint32) error          { return nil }
-func (client *b312) WriteMatchComplete() error                           { return nil }
-func (client *b312) WriteMatchSkip() error                               { return nil }
-func (client *b312) WriteUnauthorized() error                            { return nil }
-func (client *b312) WriteChannelJoinSuccess(channel string) error        { return nil }
-func (client *b312) WriteChannelRevoked(channel string) error            { return nil }
-func (client *b312) WriteChannelAvailable(channel Channel) error         { return nil }
-func (client *b312) WriteChannelAvailableAutojoin(channel Channel) error { return nil }
-func (client *b312) WriteBeatmapInfoReply(reply BeatmapInfoReply) error  { return nil }
-func (client *b312) WriteLoginPermissions(permissions uint32) error      { return nil }
-func (client *b312) WriteFriendsList(userIds []uint32) error             { return nil }
-func (client *b312) WriteProtocolNegotiation(version int32) error        { return nil }
-func (client *b312) WriteTitleUpdate(update TitleUpdate) error           { return nil }
-func (client *b312) WriteMonitor() error                                 { return nil }
-func (client *b312) WriteMatchPlayerSkipped(slotId int32) error          { return nil }
-func (client *b312) WriteRestart(retryMs int32) error                    { return nil }
-func (client *b312) WriteInvite(message Message) error                   { return nil }
-func (client *b312) WriteChannelInfoComplete() error                     { return nil }
-func (client *b312) WriteMatchChangePassword(password string) error      { return nil }
-func (client *b312) WriteSilenceInfo(timeRemaining int32) error          { return nil }
-func (client *b312) WriteUserSilenced(userId uint32) error               { return nil }
-func (client *b312) WriteUserDMsBlocked(targetName string) error         { return nil }
-func (client *b312) WriteTargetIsSilenced(targetName string) error       { return nil }
-func (client *b312) WriteVersionUpdateForced() error                     { return nil }
-func (client *b312) WriteSwitchServer(target int32) error                { return nil }
-func (client *b312) WriteAccountRestricted() error                       { return nil }
-func (client *b312) WriteRTX(message string) error                       { return nil }
-func (client *b312) WriteMatchAbort() error                              { return nil }
-func (client *b312) WriteSwitchTournamentServer(ip string) error         { return nil }

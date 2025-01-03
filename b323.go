@@ -8,41 +8,12 @@ import (
 
 // b323 changes the structure of user stats and adds the "MatchChangeBeatmap" packet
 type b323 struct {
-	BanchoIO
-	stream           io.ReadWriteCloser
-	previous         *b320
-	slotSize         int
-	supportedPackets []uint16
-}
-
-func (client *b323) Write(p []byte) (n int, err error) {
-	return client.stream.Write(p)
-}
-
-func (client *b323) Read(p []byte) (n int, err error) {
-	return client.stream.Read(p)
-}
-
-func (client *b323) Close() error {
-	return client.stream.Close()
+	*b320
 }
 
 func (client *b323) Clone() BanchoIO {
-	previous := &b320{}
-	clone := previous.Clone()
-	return &b323{
-		previous: clone.(*b320),
-		slotSize: 8,
-	}
-}
-
-func (client *b323) GetStream() io.ReadWriteCloser {
-	return client.stream
-}
-
-func (client *b323) SetStream(stream io.ReadWriteCloser) {
-	client.stream = stream
-	client.previous.SetStream(stream)
+	previous := b320{}
+	return &b323{previous.Clone().(*b320)}
 }
 
 func (client *b323) WritePacket(packetId uint16, data []byte) error {
@@ -181,11 +152,6 @@ func (client *b323) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b323) OverrideMatchSlotSize(amount int) {
-	client.slotSize = amount
-	client.previous.OverrideMatchSlotSize(amount)
-}
-
 func (client *b323) ConvertInputPacketId(packetId uint16) uint16 {
 	if packetId == 11 {
 		// "IrcJoin" packet
@@ -255,8 +221,6 @@ func (client *b323) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-/* New Packets */
-
 func (client *b323) WriteStats(writer io.Writer, info UserInfo) error {
 	writeInt32(writer, info.Id)
 	writeBoolean(writer, info.Status.UpdateStats)
@@ -305,9 +269,12 @@ func (client *b323) WriteUserQuit(quit UserQuit) error {
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
 }
 
-// Redirect UserPresence packets to UserStats
 func (client *b323) WriteUserPresence(info UserInfo) error {
 	return client.WriteUserStats(info)
+}
+
+func (client *b323) WriteMatchStart(match Match) error {
+	return client.WritePacket(BanchoMatchStart, []byte{})
 }
 
 func (client *b323) WriteUserPresenceSingle(info UserInfo) error {
@@ -324,164 +291,8 @@ func (client *b323) WriteUserPresenceBundle(infos []UserInfo) error {
 	return nil
 }
 
-func (client *b323) WriteMatchStart(match Match) error {
-	return client.WritePacket(BanchoMatchStart, []byte{})
-}
-
 func (client *b323) WriteMatchScoreUpdate(frame ScoreFrame) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteScoreFrame(writer, frame)
 	return client.WritePacket(BanchoMatchScoreUpdate, writer.Bytes())
 }
-
-/* Inherited Packets */
-
-func (client *b323) WriteMessage(message Message) error {
-	return client.previous.WriteMessage(message)
-}
-
-func (client *b323) WriteVersionUpdate() error {
-	return client.previous.WriteVersionUpdate()
-}
-
-func (client *b323) WriteLoginReply(reply int32) error {
-	return client.previous.WriteLoginReply(reply)
-}
-
-func (client *b323) WritePing() error {
-	return client.previous.WritePing()
-}
-
-func (client *b323) WriteIrcChangeUsername(oldName string, newName string) error {
-	return client.previous.WriteIrcChangeUsername(oldName, newName)
-}
-
-func (client *b323) WriteSpectateFrames(bundle ReplayFrameBundle) error {
-	return client.previous.WriteSpectateFrames(bundle)
-}
-
-func (client *b323) WriteSpectatorJoined(userId int32) error {
-	return client.previous.WriteSpectatorJoined(userId)
-}
-
-func (client *b323) WriteSpectatorLeft(userId int32) error {
-	return client.previous.WriteSpectatorLeft(userId)
-}
-
-func (client *b323) WriteSpectatorCantSpectate(userId int32) error {
-	return client.previous.WriteSpectatorCantSpectate(userId)
-}
-
-func (client *b323) WriteScoreFrame(writer io.Writer, frame ScoreFrame) error {
-	return client.previous.WriteScoreFrame(writer, frame)
-}
-
-func (client *b323) WriteStatus(writer io.Writer, status *UserStatus) error {
-	return client.previous.WriteStatus(writer, status)
-}
-
-func (client *b323) WriteMatch(writer io.Writer, match Match) error {
-	return client.previous.WriteMatch(writer, match)
-}
-
-func (client *b323) WriteGetAttention() error {
-	return client.previous.WriteGetAttention()
-}
-
-func (client *b323) WriteAnnouncement(message string) error {
-	return client.previous.WriteAnnouncement(message)
-}
-
-func (client *b323) WriteMatchUpdate(match Match) error {
-	return client.previous.WriteMatchUpdate(match)
-}
-
-func (client *b323) WriteMatchNew(match Match) error {
-	return client.previous.WriteMatchNew(match)
-}
-
-func (client *b323) WriteMatchDisband(matchId int32) error {
-	return client.previous.WriteMatchDisband(matchId)
-}
-
-func (client *b323) WriteLobbyJoin(userId int32) error {
-	return client.previous.WriteLobbyJoin(userId)
-}
-
-func (client *b323) WriteLobbyPart(userId int32) error {
-	return client.previous.WriteLobbyPart(userId)
-}
-
-func (client *b323) WriteMatchJoinSuccess(match Match) error {
-	return client.previous.WriteMatchJoinSuccess(match)
-}
-
-func (client *b323) WriteMatchJoinFail() error {
-	return client.previous.WriteMatchJoinFail()
-}
-
-func (client *b323) WriteFellowSpectatorJoined(userId int32) error {
-	return client.previous.WriteFellowSpectatorJoined(userId)
-}
-
-func (client *b323) WriteFellowSpectatorLeft(userId int32) error {
-	return client.previous.WriteFellowSpectatorLeft(userId)
-}
-
-func (client *b323) ReadMessage(reader io.Reader) (*Message, error) {
-	return client.previous.ReadMessage(reader)
-}
-
-func (client *b323) ReadStatus(reader io.Reader) (*UserStatus, error) {
-	return client.previous.ReadStatus(reader)
-}
-
-func (client *b323) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
-	return client.previous.ReadReplayFrame(reader)
-}
-
-func (client b323) ReadScoreFrame(reader io.Reader) (*ScoreFrame, error) {
-	return client.previous.ReadScoreFrame(reader)
-}
-
-func (client *b323) ReadFrameBundle(reader io.Reader) (*ReplayFrameBundle, error) {
-	return client.previous.ReadFrameBundle(reader)
-}
-
-func (client *b323) ReadMatch(reader io.Reader) (*Match, error) {
-	return client.previous.ReadMatch(reader)
-}
-
-/* Unsupported Packets */
-
-func (client *b323) WriteMatchTransferHost() error                       { return nil }
-func (client *b323) WriteMatchAllPlayersLoaded() error                   { return nil }
-func (client *b323) WriteMatchPlayerFailed(slotId uint32) error          { return nil }
-func (client *b323) WriteMatchComplete() error                           { return nil }
-func (client *b323) WriteMatchSkip() error                               { return nil }
-func (client *b323) WriteUnauthorized() error                            { return nil }
-func (client *b323) WriteChannelJoinSuccess(channel string) error        { return nil }
-func (client *b323) WriteChannelRevoked(channel string) error            { return nil }
-func (client *b323) WriteChannelAvailable(channel Channel) error         { return nil }
-func (client *b323) WriteChannelAvailableAutojoin(channel Channel) error { return nil }
-func (client *b323) WriteBeatmapInfoReply(reply BeatmapInfoReply) error  { return nil }
-func (client *b323) WriteLoginPermissions(permissions uint32) error      { return nil }
-func (client *b323) WriteFriendsList(userIds []uint32) error             { return nil }
-func (client *b323) WriteProtocolNegotiation(version int32) error        { return nil }
-func (client *b323) WriteTitleUpdate(update TitleUpdate) error           { return nil }
-func (client *b323) WriteMonitor() error                                 { return nil }
-func (client *b323) WriteMatchPlayerSkipped(slotId int32) error          { return nil }
-func (client *b323) WriteRestart(retryMs int32) error                    { return nil }
-func (client *b323) WriteInvite(message Message) error                   { return nil }
-func (client *b323) WriteChannelInfoComplete() error                     { return nil }
-func (client *b323) WriteMatchChangePassword(password string) error      { return nil }
-func (client *b323) WriteSilenceInfo(timeRemaining int32) error          { return nil }
-func (client *b323) WriteUserSilenced(userId uint32) error               { return nil }
-func (client *b323) WriteUserDMsBlocked(targetName string) error         { return nil }
-func (client *b323) WriteTargetIsSilenced(targetName string) error       { return nil }
-func (client *b323) WriteVersionUpdateForced() error                     { return nil }
-func (client *b323) WriteSwitchServer(target int32) error                { return nil }
-func (client *b323) WriteAccountRestricted() error                       { return nil }
-func (client *b323) WriteRTX(message string) error                       { return nil }
-func (client *b323) WriteMatchAbort() error                              { return nil }
-func (client *b323) WriteSwitchTournamentServer(ip string) error         { return nil }

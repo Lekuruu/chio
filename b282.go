@@ -190,8 +190,6 @@ func (client *b282) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-/* New Packets */
-
 func (client *b282) WriteLoginReply(reply int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, reply)
@@ -290,6 +288,66 @@ func (client *b282) WriteSpectatorCantSpectate(userId int32) error {
 	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
 }
 
+func (client *b282) WriteStatus(writer io.Writer, status *UserStatus) error {
+	// Convert action enum
+	action := status.Action
+
+	if action > StatusSubmitting {
+		// Actions after "StatusSubmitting" are not supported
+		action = StatusUnknown
+	}
+
+	if status.UpdateStats {
+		// This will make the client update the user's stats
+		// It will not be present in later versions
+		action = StatusStatsUpdate
+	}
+
+	writeUint8(writer, action)
+
+	if action != StatusUnknown {
+		writeString(writer, status.Text)
+		writeString(writer, status.BeatmapChecksum)
+		writeUint16(writer, uint16(status.Mods))
+	}
+
+	return nil
+}
+
+func (client *b282) WriteStats(writer io.Writer, info UserInfo) error {
+	writeInt32(writer, info.Id)
+	writeString(writer, info.Name)
+	writeUint64(writer, info.Stats.Rscore)
+	writeFloat64(writer, info.Stats.Accuracy)
+	writeInt32(writer, info.Stats.Playcount)
+	writeUint64(writer, info.Stats.Tscore)
+	writeInt32(writer, info.Stats.Rank)
+	writeString(writer, info.AvatarFilename())
+	client.WriteStatus(writer, info.Status)
+	writeUint8(writer, uint8(info.Presence.Timezone+24))
+	writeString(writer, info.Presence.City)
+	return nil
+}
+
+// Redirect UserPresence packets to UserStats
+func (client *b282) WriteUserPresence(info UserInfo) error {
+	return client.WriteUserStats(info)
+}
+
+func (client *b282) WriteUserPresenceSingle(info UserInfo) error {
+	return client.WriteUserPresence(info)
+}
+
+func (client *b282) WriteUserPresenceBundle(infos []UserInfo) error {
+	for _, info := range infos {
+		err := client.WriteUserPresence(info)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (client *b282) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	var err error
 	errors := NewErrorCollection()
@@ -374,66 +432,6 @@ func (client *b282) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	}
 
 	return frame, errors.Next()
-}
-
-func (client *b282) WriteStatus(writer io.Writer, status *UserStatus) error {
-	// Convert action enum
-	action := status.Action
-
-	if action > StatusSubmitting {
-		// Actions after "StatusSubmitting" are not supported
-		action = StatusUnknown
-	}
-
-	if status.UpdateStats {
-		// This will make the client update the user's stats
-		// It will not be present in later versions
-		action = StatusStatsUpdate
-	}
-
-	writeUint8(writer, action)
-
-	if action != StatusUnknown {
-		writeString(writer, status.Text)
-		writeString(writer, status.BeatmapChecksum)
-		writeUint16(writer, uint16(status.Mods))
-	}
-
-	return nil
-}
-
-func (client *b282) WriteStats(writer io.Writer, info UserInfo) error {
-	writeInt32(writer, info.Id)
-	writeString(writer, info.Name)
-	writeUint64(writer, info.Stats.Rscore)
-	writeFloat64(writer, info.Stats.Accuracy)
-	writeInt32(writer, info.Stats.Playcount)
-	writeUint64(writer, info.Stats.Tscore)
-	writeInt32(writer, info.Stats.Rank)
-	writeString(writer, info.AvatarFilename())
-	client.WriteStatus(writer, info.Status)
-	writeUint8(writer, uint8(info.Presence.Timezone+24))
-	writeString(writer, info.Presence.City)
-	return nil
-}
-
-// Redirect UserPresence packets to UserStats
-func (client *b282) WriteUserPresence(info UserInfo) error {
-	return client.WriteUserStats(info)
-}
-
-func (client *b282) WriteUserPresenceSingle(info UserInfo) error {
-	return client.WriteUserPresence(info)
-}
-
-func (client *b282) WriteUserPresenceBundle(infos []UserInfo) error {
-	for _, info := range infos {
-		err := client.WriteUserPresence(info)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 /* Unsupported Packets */
