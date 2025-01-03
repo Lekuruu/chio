@@ -158,6 +158,8 @@ func (client *b312) SupportedPackets() []uint16 {
 		BanchoMatchJoinSuccess,
 		BanchoMatchJoinFail,
 		OsuMatchChangeSlot,
+		OsuMatchReady,
+		OsuMatchLock,
 		OsuMatchChangeSettings,
 		BanchoFellowSpectatorJoined,
 		BanchoFellowSpectatorLeft,
@@ -189,8 +191,8 @@ func (client *b312) ConvertInputPacketId(packetId uint16) uint16 {
 		// "IrcJoin" packet
 		return BanchoHandleIrcJoin
 	}
-	if packetId > 11 {
-		return packetId - 1
+	if packetId > 11 && packetId <= 45 {
+		packetId -= 1
 	}
 	return packetId
 }
@@ -200,8 +202,8 @@ func (client *b312) ConvertOutputPacketId(packetId uint16) uint16 {
 		// "IrcJoin" packet
 		return 11
 	}
-	if packetId >= 11 {
-		return packetId + 1
+	if packetId >= 11 && packetId < 45 {
+		packetId += 1
 	}
 	return packetId
 }
@@ -240,9 +242,7 @@ func (client *b312) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 /* New Packets */
 
 func (client *b312) WriteMatchStart(match Match) error {
-	writer := bytes.NewBuffer([]byte{})
-	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchStart, writer.Bytes())
+	return client.WritePacket(BanchoMatchStart, []byte{})
 }
 
 func (client *b312) WriteMatchScoreUpdate(frame ScoreFrame) error {

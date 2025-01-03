@@ -157,6 +157,8 @@ func (client *b298) SupportedPackets() []uint16 {
 		BanchoMatchJoinSuccess,
 		BanchoMatchJoinFail,
 		OsuMatchChangeSlot,
+		OsuMatchReady,
+		OsuMatchLock,
 		OsuMatchChangeSettings,
 		BanchoFellowSpectatorJoined,
 		BanchoFellowSpectatorLeft,
