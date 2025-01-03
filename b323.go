@@ -6,7 +6,8 @@ import (
 	"io"
 )
 
-// b323 changes the structure of user stats and adds the "MatchChangeBeatmap" packet
+// b323 changes the structure of user stats
+// and adds the "MatchChangeBeatmap" packet
 type b323 struct {
 	*b320
 	userMap map[int32]bool
