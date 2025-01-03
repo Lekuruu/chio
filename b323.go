@@ -9,11 +9,15 @@ import (
 // b323 changes the structure of user stats and adds the "MatchChangeBeatmap" packet
 type b323 struct {
 	*b320
+	userMap map[int32]bool
 }
 
 func (client *b323) Clone() BanchoIO {
 	previous := b320{}
-	return &b323{previous.Clone().(*b320)}
+	return &b323{
+		previous.Clone().(*b320),
+		make(map[int32]bool),
+	}
 }
 
 func (client *b323) WritePacket(packetId uint16, data []byte) error {
@@ -222,10 +226,15 @@ func (client *b323) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 }
 
 func (client *b323) WriteStats(writer io.Writer, info UserInfo) error {
-	writeInt32(writer, info.Id)
-	writeBoolean(writer, info.Status.UpdateStats)
+	// Stats will be written if the user has not been
+	// sent before or if the server has a stats update
+	_, hasSeenUser := client.userMap[info.Id]
+	writeStats := !hasSeenUser || info.Status.UpdateStats
 
-	if info.Status.UpdateStats {
+	writeInt32(writer, info.Id)
+	writeBoolean(writer, writeStats)
+
+	if writeStats {
 		writeString(writer, info.Name)
 		writeUint64(writer, info.Stats.Rscore)
 		writeFloat32(writer, float32(info.Stats.Accuracy))
@@ -237,6 +246,7 @@ func (client *b323) WriteStats(writer io.Writer, info UserInfo) error {
 		writeString(writer, info.Presence.City)
 	}
 
+	client.userMap[info.Id] = true
 	client.WriteStatus(writer, info.Status)
 	return nil
 }
@@ -265,16 +275,15 @@ func (client *b323) WriteUserQuit(quit UserQuit) error {
 		return nil
 	}
 
+	// Remove from user map
+	delete(client.userMap, quit.Info.Id)
+
 	client.WriteStats(writer, *quit.Info)
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
 }
 
 func (client *b323) WriteUserPresence(info UserInfo) error {
 	return client.WriteUserStats(info)
-}
-
-func (client *b323) WriteMatchStart(match Match) error {
-	return client.WritePacket(BanchoMatchStart, []byte{})
 }
 
 func (client *b323) WriteUserPresenceSingle(info UserInfo) error {
