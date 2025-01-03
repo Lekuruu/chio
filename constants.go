@@ -112,7 +112,8 @@ const (
 
 	/* Packets that are unused today, but used in legacy clients */
 
-	BanchoHandleIrcJoin uint16 = 0xFFFF
+	BanchoHandleIrcJoin   uint16 = 0xFFFF
+	OsuMatchChangeBeatmap uint16 = 0xFFFE
 )
 
 const (
