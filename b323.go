@@ -444,7 +444,7 @@ func (client *b323) ReadFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 	return client.previous.ReadFrameBundle(reader)
 }
 
-func (client *b323) ReadMatch(reader io.Reader) (Match, error) {
+func (client *b323) ReadMatch(reader io.Reader) (*Match, error) {
 	return client.previous.ReadMatch(reader)
 }
 

@@ -321,10 +321,10 @@ func (client *b298) WriteFellowSpectatorLeft(userId int32) error {
 	return client.WritePacket(BanchoFellowSpectatorLeft, writer.Bytes())
 }
 
-func (client *b298) ReadMatch(reader io.Reader) (Match, error) {
+func (client *b298) ReadMatch(reader io.Reader) (*Match, error) {
 	var err error
 	errors := NewErrorCollection()
-	match := Match{}
+	match := &Match{}
 
 	matchId, err := readUint8(reader)
 	match.Id = int32(matchId)

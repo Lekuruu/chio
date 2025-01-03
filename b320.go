@@ -409,7 +409,7 @@ func (client *b320) ReadFrameBundle(reader io.Reader) (*ReplayFrameBundle, error
 	return client.previous.ReadFrameBundle(reader)
 }
 
-func (client *b320) ReadMatch(reader io.Reader) (Match, error) {
+func (client *b320) ReadMatch(reader io.Reader) (*Match, error) {
 	return client.previous.ReadMatch(reader)
 }
 

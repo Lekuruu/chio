@@ -306,10 +306,10 @@ func (client *b312) WriteMatch(writer io.Writer, match Match) error {
 	return nil
 }
 
-func (client *b312) ReadMatch(reader io.Reader) (Match, error) {
+func (client *b312) ReadMatch(reader io.Reader) (*Match, error) {
 	var err error
 	errors := NewErrorCollection()
-	match := Match{}
+	match := &Match{}
 
 	matchId, err := readUint8(reader)
 	match.Id = int32(matchId)
