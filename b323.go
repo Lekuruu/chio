@@ -157,7 +157,8 @@ func (client *b323) SupportedPackets() []uint16 {
 		BanchoMatchJoinSuccess,
 		BanchoMatchJoinFail,
 		OsuMatchChangeSlot,
-		OsuMatchChangeSettings,
+		OsuMatchReady,
+		OsuMatchLock,
 		BanchoFellowSpectatorJoined,
 		BanchoFellowSpectatorLeft,
 		OsuMatchStart,
@@ -165,6 +166,7 @@ func (client *b323) SupportedPackets() []uint16 {
 		OsuMatchScoreUpdate,
 		BanchoMatchScoreUpdate,
 		OsuMatchComplete,
+		OsuMatchChangeSettings,
 		OsuMatchChangeBeatmap,
 	}
 	return client.supportedPackets
@@ -193,11 +195,11 @@ func (client *b323) ConvertInputPacketId(packetId uint16) uint16 {
 		// "MatchChangeBeatmap" packet
 		return OsuMatchChangeBeatmap
 	}
-	if packetId > 11 {
+	if packetId > 11 && packetId <= 45 {
 		packetId -= 1
 	}
 	if packetId > 50 {
-		packetId -= 1
+		packetId += 1
 	}
 	return packetId
 }
@@ -211,11 +213,11 @@ func (client *b323) ConvertOutputPacketId(packetId uint16) uint16 {
 		// "MatchChangeBeatmap" packet
 		return 50
 	}
-	if packetId >= 11 {
+	if packetId >= 11 && packetId < 45 {
 		packetId += 1
 	}
-	if packetId >= 50 {
-		packetId += 1
+	if packetId > 50 {
+		packetId -= 1
 	}
 	return packetId
 }
@@ -322,6 +324,16 @@ func (client *b323) WriteUserPresenceBundle(infos []UserInfo) error {
 	return nil
 }
 
+func (client *b323) WriteMatchStart(match Match) error {
+	return client.WritePacket(BanchoMatchStart, []byte{})
+}
+
+func (client *b323) WriteMatchScoreUpdate(frame ScoreFrame) error {
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteScoreFrame(writer, frame)
+	return client.WritePacket(BanchoMatchScoreUpdate, writer.Bytes())
+}
+
 /* Inherited Packets */
 
 func (client *b323) WriteMessage(message Message) error {
@@ -370,14 +382,6 @@ func (client *b323) WriteStatus(writer io.Writer, status *UserStatus) error {
 
 func (client *b323) WriteMatch(writer io.Writer, match Match) error {
 	return client.previous.WriteMatch(writer, match)
-}
-
-func (client *b323) WriteMatchStart(match Match) error {
-	return client.previous.WriteMatchStart(match)
-}
-
-func (client *b323) WriteMatchScoreUpdate(frame ScoreFrame) error {
-	return client.previous.WriteMatchScoreUpdate(frame)
 }
 
 func (client *b323) WriteGetAttention() error {
