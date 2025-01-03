@@ -263,6 +263,12 @@ func (client *b312) WriteMatchNew(match Match) error {
 	return client.WritePacket(BanchoMatchNew, writer.Bytes())
 }
 
+func (client *b312) WriteMatchJoinSuccess(match Match) error {
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteMatch(writer, match)
+	return client.WritePacket(BanchoMatchJoinSuccess, writer.Bytes())
+}
+
 func (client *b312) WriteMatch(writer io.Writer, match Match) error {
 	slotsOpen := make([]bool, client.slotSize)
 	slotsUsed := make([]bool, client.slotSize)
@@ -447,10 +453,6 @@ func (client *b312) WriteLobbyJoin(userId int32) error {
 
 func (client *b312) WriteLobbyPart(userId int32) error {
 	return client.previous.WriteLobbyPart(userId)
-}
-
-func (client *b312) WriteMatchJoinSuccess(match Match) error {
-	return client.previous.WriteMatchJoinSuccess(match)
 }
 
 func (client *b312) WriteMatchJoinFail() error {

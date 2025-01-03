@@ -298,7 +298,9 @@ func (client *b298) WriteLobbyPart(userId int32) error {
 }
 
 func (client *b298) WriteMatchJoinSuccess(match Match) error {
-	return client.WritePacket(BanchoMatchJoinSuccess, []byte{})
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteMatch(writer, match)
+	return client.WritePacket(BanchoMatchJoinSuccess, writer.Bytes())
 }
 
 func (client *b298) WriteMatchJoinFail() error {
