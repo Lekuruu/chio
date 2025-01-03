@@ -156,8 +156,11 @@ func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
 		// "IrcJoin" packet
 		return BanchoHandleIrcJoin
 	}
-	if packetId > 11 {
+	if packetId > 11 && packetId <= 45 {
 		return packetId - 1
+	}
+	if packetId > 50 {
+		packetId -= 1
 	}
 	return packetId
 }
@@ -167,8 +170,11 @@ func (client *b282) ConvertOutputPacketId(packetId uint16) uint16 {
 		// "IrcJoin" packet
 		return 11
 	}
-	if packetId >= 11 {
+	if packetId >= 11 && packetId < 45 {
 		return packetId + 1
+	}
+	if packetId > 50 {
+		packetId += 1
 	}
 	return packetId
 }
