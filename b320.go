@@ -393,7 +393,7 @@ func (client *b320) WriteFellowSpectatorLeft(userId int32) error {
 	return client.previous.WriteFellowSpectatorLeft(userId)
 }
 
-func (client *b320) ReadStatus(reader io.Reader) (any, error) {
+func (client *b320) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	return client.previous.ReadStatus(reader)
 }
 

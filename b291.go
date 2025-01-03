@@ -207,7 +207,7 @@ func (client *b291) WriteAnnouncement(message string) error {
 
 /* Inherited Packets */
 
-func (client *b291) ReadStatus(reader io.Reader) (any, error) {
+func (client *b291) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	return client.previous.ReadStatus(reader)
 }
 

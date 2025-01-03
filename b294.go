@@ -420,7 +420,7 @@ func (client *b294) WriteAnnouncement(message string) error {
 	return client.previous.WriteAnnouncement(message)
 }
 
-func (client *b294) ReadStatus(reader io.Reader) (any, error) {
+func (client *b294) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	return client.previous.ReadStatus(reader)
 }
 

@@ -290,10 +290,10 @@ func (client *b282) WriteSpectatorCantSpectate(userId int32) error {
 	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
 }
 
-func (client *b282) ReadStatus(reader io.Reader) (any, error) {
+func (client *b282) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	var err error
 	errors := NewErrorCollection()
-	status := UserStatus{}
+	status := &UserStatus{}
 	status.Action, err = readUint8(reader)
 	errors.Add(err)
 

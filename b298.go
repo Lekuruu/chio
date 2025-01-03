@@ -456,7 +456,7 @@ func (client *b298) WriteAnnouncement(message string) error {
 	return client.previous.WriteAnnouncement(message)
 }
 
-func (client *b298) ReadStatus(reader io.Reader) (any, error) {
+func (client *b298) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	return client.previous.ReadStatus(reader)
 }
 

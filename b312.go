@@ -467,7 +467,7 @@ func (client *b312) WriteFellowSpectatorLeft(userId int32) error {
 	return client.previous.WriteFellowSpectatorLeft(userId)
 }
 
-func (client *b312) ReadStatus(reader io.Reader) (any, error) {
+func (client *b312) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	return client.previous.ReadStatus(reader)
 }
 

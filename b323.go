@@ -428,7 +428,7 @@ func (client *b323) ReadMessage(reader io.Reader) (*Message, error) {
 	return client.previous.ReadMessage(reader)
 }
 
-func (client *b323) ReadStatus(reader io.Reader) (any, error) {
+func (client *b323) ReadStatus(reader io.Reader) (*UserStatus, error) {
 	return client.previous.ReadStatus(reader)
 }
 
