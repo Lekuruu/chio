@@ -170,7 +170,7 @@ func (client *b323) ConvertInputPacketId(packetId uint16) uint16 {
 		packetId -= 1
 	}
 	if packetId > 50 {
-		packetId += 1
+		packetId -= 1
 	}
 	return packetId
 }
@@ -188,7 +188,7 @@ func (client *b323) ConvertOutputPacketId(packetId uint16) uint16 {
 		packetId += 1
 	}
 	if packetId > 50 {
-		packetId -= 1
+		packetId += 1
 	}
 	return packetId
 }
