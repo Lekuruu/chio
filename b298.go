@@ -290,13 +290,13 @@ func (client *b298) WriteMatchDisband(matchId int32) error {
 func (client *b298) WriteLobbyJoin(userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(OsuLobbyJoin, writer.Bytes())
+	return client.WritePacket(BanchoLobbyJoin, writer.Bytes())
 }
 
 func (client *b298) WriteLobbyPart(userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(OsuLobbyPart, writer.Bytes())
+	return client.WritePacket(BanchoLobbyPart, writer.Bytes())
 }
 
 func (client *b298) WriteMatchJoinSuccess(match Match) error {
