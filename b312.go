@@ -344,6 +344,8 @@ func (client *b312) ReadMatch(reader io.Reader) (*Match, error) {
 
 		if slotsOpen[i] {
 			slot.Status = SlotStatusOpen
+		} else {
+			slot.Status = SlotStatusLocked
 		}
 
 		if slotsUsed[i] {
