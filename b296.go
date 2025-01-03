@@ -77,7 +77,7 @@ func (client *b296) ReadPacket() (packet *BanchoPacket, err error) {
 	packet.Id = client.ConvertInputPacketId(packet.Id)
 
 	if !client.ImplementsPacket(packet.Id) {
-		return nil, nil
+		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
 	length, err := readInt32(client.stream)
