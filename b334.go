@@ -207,7 +207,7 @@ func (client *b334) ConvertOutputPacketId(packetId uint16) uint16 {
 		return 50
 	}
 	if packetId >= 11 {
-		return packetId + 1
+		packetId += 1
 	}
 	if packetId > 50 {
 		packetId += 1
