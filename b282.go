@@ -292,11 +292,6 @@ func (client *b282) WriteStatus(writer io.Writer, status *UserStatus) error {
 	// Convert action enum
 	action := status.Action
 
-	if action > StatusSubmitting {
-		// Actions after "StatusSubmitting" are not supported
-		action = StatusUnknown
-	}
-
 	if status.UpdateStats {
 		// This will make the client update the user's stats
 		// It will not be present in later versions
