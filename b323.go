@@ -157,6 +157,36 @@ func (client *b323) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
+func (client *b323) ConvertInputPacketId(packetId uint16) uint16 {
+	if packetId == 11 {
+		// "IrcJoin" packet
+		return BanchoHandleIrcJoin
+	}
+	if packetId == 50 {
+		// "MatchChangeBeatmap" packet
+		return OsuMatchChangeBeatmap
+	}
+	if packetId > 11 && packetId <= 45 {
+		packetId -= 1
+	}
+	return packetId
+}
+
+func (client *b323) ConvertOutputPacketId(packetId uint16) uint16 {
+	if packetId == BanchoHandleIrcJoin {
+		// "IrcJoin" packet
+		return 11
+	}
+	if packetId == OsuMatchChangeBeatmap {
+		// "MatchChangeBeatmap" packet
+		return 50
+	}
+	if packetId >= 11 && packetId < 45 {
+		return packetId + 1
+	}
+	return packetId
+}
+
 func (client *b323) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
 	switch packetId {
 	case OsuSendUserStatus:

@@ -157,7 +157,7 @@ func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {
 		return BanchoHandleIrcJoin
 	}
 	if packetId > 11 && packetId <= 45 {
-		return packetId - 1
+		packetId -= 1
 	}
 	if packetId > 50 {
 		packetId -= 1
