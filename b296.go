@@ -179,9 +179,9 @@ func (client b296) ReadScoreFrame(reader io.Reader) (*ScoreFrame, error) {
 	frame := &ScoreFrame{}
 	_, err = readString(reader) // Checksum
 	errors.Add(err)
-	frame.Id, err = readUint8(reader)
-	errors.Add(err)
 	frame.Time, err = readInt32(reader)
+	errors.Add(err)
+	frame.Id, err = readUint8(reader)
 	errors.Add(err)
 	frame.Total300, err = readUint16(reader)
 	errors.Add(err)
