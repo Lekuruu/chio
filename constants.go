@@ -181,6 +181,12 @@ const (
 )
 
 const (
+	CompletenessStatusOnly uint8 = 0
+	CompletenessStatistics uint8 = 1
+	CompletenessFull       uint8 = 2
+)
+
+const (
 	ReplayActionStandard      uint8 = 0
 	ReplayActionNewSong       uint8 = 1
 	ReplayActionSkip          uint8 = 2
