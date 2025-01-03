@@ -115,7 +115,7 @@ type BanchoWriters interface {
 var clients map[int]BanchoIO = make(map[int]BanchoIO)
 
 const lowestVersion int = 282
-const highestVersion int = 323
+const highestVersion int = 334
 
 // GetClientInterface returns a BanchoIO interface for the given client version
 func GetClientInterface(stream io.ReadWriteCloser, clientVersion int) BanchoIO {
@@ -165,4 +165,6 @@ func init() {
 	clients[320] = &b320{}
 	clients[322] = &b320{}
 	clients[323] = &b323{}
+	clients[333] = &b323{}
+	clients[334] = &b334{}
 }
