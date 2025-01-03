@@ -396,7 +396,7 @@ func (client *b296) ReadMessagePrivate(reader io.Reader) (*Message, error) {
 
 func (client *b296) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b296) WriteMatchNew(match Match) error                     { return nil }
-func (client *b296) WriteMatchDisband(matchId uint32) error              { return nil }
+func (client *b296) WriteMatchDisband(matchId int32) error               { return nil }
 func (client *b296) WriteLobbyJoin(userId int32) error                   { return nil }
 func (client *b296) WriteLobbyPart(userId int32) error                   { return nil }
 func (client *b296) WriteMatchJoinSuccess(match Match) error             { return nil }

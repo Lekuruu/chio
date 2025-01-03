@@ -432,7 +432,7 @@ func (client *b294) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 
 func (client *b294) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b294) WriteMatchNew(match Match) error                     { return nil }
-func (client *b294) WriteMatchDisband(matchId uint32) error              { return nil }
+func (client *b294) WriteMatchDisband(matchId int32) error               { return nil }
 func (client *b294) WriteLobbyJoin(userId int32) error                   { return nil }
 func (client *b294) WriteLobbyPart(userId int32) error                   { return nil }
 func (client *b294) WriteMatchJoinSuccess(match Match) error             { return nil }

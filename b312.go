@@ -443,7 +443,7 @@ func (client *b312) WriteAnnouncement(message string) error {
 	return client.previous.WriteAnnouncement(message)
 }
 
-func (client *b312) WriteMatchDisband(matchId uint32) error {
+func (client *b312) WriteMatchDisband(matchId int32) error {
 	return client.previous.WriteMatchDisband(matchId)
 }
 

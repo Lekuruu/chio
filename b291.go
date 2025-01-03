@@ -291,7 +291,7 @@ func (client *b291) WriteStats(writer io.Writer, info UserInfo) error {
 
 func (client *b291) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b291) WriteMatchNew(match Match) error                     { return nil }
-func (client *b291) WriteMatchDisband(matchId uint32) error              { return nil }
+func (client *b291) WriteMatchDisband(matchId int32) error               { return nil }
 func (client *b291) WriteLobbyJoin(userId int32) error                   { return nil }
 func (client *b291) WriteLobbyPart(userId int32) error                   { return nil }
 func (client *b291) WriteMatchJoinSuccess(match Match) error             { return nil }

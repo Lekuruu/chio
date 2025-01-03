@@ -442,7 +442,7 @@ func (client *b282) WriteGetAttention() error                            { retur
 func (client *b282) WriteAnnouncement(message string) error              { return nil }
 func (client *b282) WriteMatchUpdate(match Match) error                  { return nil }
 func (client *b282) WriteMatchNew(match Match) error                     { return nil }
-func (client *b282) WriteMatchDisband(matchId uint32) error              { return nil }
+func (client *b282) WriteMatchDisband(matchId int32) error               { return nil }
 func (client *b282) WriteLobbyJoin(userId int32) error                   { return nil }
 func (client *b282) WriteLobbyPart(userId int32) error                   { return nil }
 func (client *b282) WriteMatchJoinSuccess(match Match) error             { return nil }

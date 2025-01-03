@@ -279,9 +279,9 @@ func (client *b298) WriteMatchNew(match Match) error {
 	return client.WritePacket(BanchoMatchNew, writer.Bytes())
 }
 
-func (client *b298) WriteMatchDisband(matchId uint32) error {
+func (client *b298) WriteMatchDisband(matchId int32) error {
 	writer := bytes.NewBuffer([]byte{})
-	writeUint32(writer, matchId)
+	writeInt32(writer, matchId)
 	return client.WritePacket(BanchoMatchDisband, writer.Bytes())
 }
 

@@ -67,7 +67,7 @@ type BanchoWriters interface {
 	WriteAnnouncement(message string) error
 	WriteMatchUpdate(match Match) error
 	WriteMatchNew(match Match) error
-	WriteMatchDisband(matchId uint32) error
+	WriteMatchDisband(matchId int32) error
 	WriteLobbyJoin(userId int32) error
 	WriteLobbyPart(userId int32) error
 	WriteMatchJoinSuccess(match Match) error

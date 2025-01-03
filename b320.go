@@ -363,7 +363,7 @@ func (client *b320) WriteMatchNew(match Match) error {
 	return client.previous.WriteMatchNew(match)
 }
 
-func (client *b320) WriteMatchDisband(matchId uint32) error {
+func (client *b320) WriteMatchDisband(matchId int32) error {
 	return client.previous.WriteMatchDisband(matchId)
 }
 
