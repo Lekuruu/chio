@@ -6,9 +6,11 @@ import (
 	"io"
 )
 
-// b334 adds the "compression" boolean to the
-// packet header. It also adds mods to the
-// match struct, as well as the packet IDs 50-58
+// b334 has a lot of breaking changes:
+//   - Compression boolean inside packet header
+//   - Removal of checksums in score frames
+//   - Mods inside match struct
+//   - Packet IDs 50-58
 type b334 struct {
 	*b323
 }
@@ -490,7 +492,7 @@ func (client *b334) WriteUserQuit(quit UserQuit) error {
 	}
 
 	// Remove from user map
-	delete(client.b323.userMap, quit.Info.Id)
+	delete(client.userMap, quit.Info.Id)
 
 	client.WriteStats(writer, *quit.Info)
 	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
