@@ -204,3 +204,7 @@ func (client *b340) ImplementsPacket(packetId uint16) bool {
 	}
 	return false
 }
+
+func (client *b340) WriteMatchSkip() error {
+	return client.WritePacket(BanchoMatchSkip, []byte{})
+}
