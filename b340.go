@@ -147,8 +147,6 @@ func (client *b340) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 		return readUint32(reader)
 	case OsuMatchScoreUpdate:
 		return client.ReadScoreFrame(reader)
-	case OsuMatchChangeBeatmap:
-		return client.ReadMatch(reader)
 	case OsuMatchChangeMods:
 		return readUint32(reader)
 	default:
@@ -211,7 +209,6 @@ func (client *b340) SupportedPackets() []uint16 {
 		BanchoMatchScoreUpdate,
 		OsuMatchComplete,
 		OsuMatchChangeSettings,
-		OsuMatchChangeBeatmap,
 		BanchoMatchTransferHost,
 		OsuMatchChangeMods,
 		OsuMatchLoadComplete,
