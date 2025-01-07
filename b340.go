@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// b340 adds multiplayer skip packets
+// b340 removes the "MatchChangeBeatmap" packet
 type b340 struct {
 	*b338
 }
@@ -97,6 +97,28 @@ func (client *b340) ReadPacket() (packet *BanchoPacket, err error) {
 	}
 
 	return packet, nil
+}
+
+func (client *b340) ConvertInputPacketId(packetId uint16) uint16 {
+	if packetId == 11 {
+		// "IrcJoin" packet
+		return BanchoHandleIrcJoin
+	}
+	if packetId > 11 {
+		packetId -= 1
+	}
+	return packetId
+}
+
+func (client *b340) ConvertOutputPacketId(packetId uint16) uint16 {
+	if packetId == BanchoHandleIrcJoin {
+		// "IrcJoin" packet
+		return 11
+	}
+	if packetId >= 11 {
+		packetId += 1
+	}
+	return packetId
 }
 
 func (client *b340) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
@@ -199,8 +221,6 @@ func (client *b340) SupportedPackets() []uint16 {
 		OsuMatchFailed,
 		BanchoMatchPlayerFailed,
 		BanchoMatchComplete,
-		OsuMatchSkipRequest,
-		BanchoMatchSkip,
 	}
 	return client.supportedPackets
 }
@@ -214,6 +234,20 @@ func (client *b340) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b340) WriteMatchSkip() error {
-	return client.WritePacket(BanchoMatchSkip, []byte{})
+func (client *b340) WriteMatchTransferHost() error {
+	return client.WritePacket(BanchoMatchTransferHost, []byte{})
+}
+
+func (client *b340) WriteMatchAllPlayersLoaded() error {
+	return client.WritePacket(BanchoMatchAllPlayersLoaded, []byte{})
+}
+
+func (client *b340) WriteMatchComplete() error {
+	return client.WritePacket(BanchoMatchComplete, []byte{})
+}
+
+func (client *b340) WriteMatchPlayerFailed(slotId uint32) error {
+	writer := bytes.NewBuffer([]byte{})
+	writeUint32(writer, slotId)
+	return client.WritePacket(BanchoMatchPlayerFailed, writer.Bytes())
 }
