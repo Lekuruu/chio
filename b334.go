@@ -206,7 +206,7 @@ func (client *b334) ConvertOutputPacketId(packetId uint16) uint16 {
 	}
 	if packetId == OsuMatchChangeBeatmap {
 		// "MatchChangeBeatmap" packet
-		return 50
+		return 51
 	}
 	if packetId >= 11 {
 		packetId += 1
