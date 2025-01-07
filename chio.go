@@ -169,5 +169,7 @@ func init() {
 	clients[334] = &b334{}
 	clients[337] = &b334{}
 	clients[338] = &b338{}
+	clients[339] = &b338{}
 	clients[340] = &b340{}
+	clients[341] = &b340{}
 }
