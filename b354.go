@@ -129,6 +129,8 @@ func (client *b354) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 		return readUint32(reader)
 	case OsuChannelJoin:
 		return readString(reader)
+	case OsuChannelLeave:
+		return readString(reader)
 	case OsuBeatmapInfoRequest:
 		return client.ReadBeatmapInfoRequest(reader)
 	default:

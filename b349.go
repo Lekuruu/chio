@@ -129,6 +129,8 @@ func (client *b349) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 		return readUint32(reader)
 	case OsuChannelJoin:
 		return readString(reader)
+	case OsuChannelLeave:
+		return readString(reader)
 	default:
 		return nil, nil
 	}
