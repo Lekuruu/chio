@@ -81,6 +81,12 @@ type BeatmapInfo struct {
 	Checksum     string
 }
 
+// IsRanked is used to check whether or not the map is ranked/approved
+func (info *BeatmapInfo) IsRanked() bool {
+	return info.RankedStatus == RankedStatusRanked ||
+		info.RankedStatus == RankedStatusApproved
+}
+
 type BeatmapInfoReply struct {
 	Beatmaps []BeatmapInfo
 }

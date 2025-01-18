@@ -6,17 +6,17 @@ import (
 	"io"
 )
 
-// b349 adds the channel datatype and packets
-type b349 struct {
-	*b342
+// b354 adds the beatmap info packets
+type b354 struct {
+	*b349
 }
 
-func (client *b349) Clone() BanchoIO {
-	previous := b342{}
-	return &b349{previous.Clone().(*b342)}
+func (client *b354) Clone() BanchoIO {
+	previous := b349{}
+	return &b354{previous.Clone().(*b349)}
 }
 
-func (client *b349) WritePacket(packetId uint16, data []byte) error {
+func (client *b354) WritePacket(packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	compressionEnabled := len(data) >= 150
@@ -50,7 +50,7 @@ func (client *b349) WritePacket(packetId uint16, data []byte) error {
 	return err
 }
 
-func (client *b349) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b354) ReadPacket() (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
 	packet.Id, err = readUint16(client.stream)
 	if err != nil {
@@ -99,7 +99,7 @@ func (client *b349) ReadPacket() (packet *BanchoPacket, err error) {
 	return packet, nil
 }
 
-func (client *b349) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
+func (client *b354) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
 	switch packetId {
 	case OsuSendUserStatus:
 		return client.ReadStatus(reader)
@@ -131,12 +131,14 @@ func (client *b349) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 		return readString(reader)
 	case OsuChannelLeave:
 		return readString(reader)
+	case OsuBeatmapInfoRequest:
+		return client.ReadBeatmapInfoRequest(reader)
 	default:
 		return nil, nil
 	}
 }
 
-func (client *b349) SupportedPackets() []uint16 {
+func (client *b354) SupportedPackets() []uint16 {
 	if client.supportedPackets != nil {
 		return client.supportedPackets
 	}
@@ -207,11 +209,13 @@ func (client *b349) SupportedPackets() []uint16 {
 		BanchoChannelAvailable,
 		BanchoChannelRevoked,
 		BanchoChannelAvailableAutojoin,
+		OsuBeatmapInfoRequest,
+		BanchoBeatmapInfoReply,
 	}
 	return client.supportedPackets
 }
 
-func (client *b349) ImplementsPacket(packetId uint16) bool {
+func (client *b354) ImplementsPacket(packetId uint16) bool {
 	for _, id := range client.SupportedPackets() {
 		if id == packetId {
 			return true
@@ -220,26 +224,34 @@ func (client *b349) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b349) WriteChannelJoinSuccess(channel string) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeString(writer, channel)
-	return client.WritePacket(BanchoChannelJoinSuccess, writer.Bytes())
+func (client *b354) ReadBeatmapInfoRequest(reader io.Reader) (*BeatmapInfoRequest, error) {
+	var err error
+	errors := NewErrorCollection()
+	request := &BeatmapInfoRequest{}
+	filenameCount, err := readInt32(reader)
+	errors.Add(err)
+
+	for range filenameCount {
+		filename, err := readString(reader)
+		errors.Add(err)
+		request.Filenames = append(request.Filenames, filename)
+	}
+
+	return request, errors.Next()
 }
 
-func (client *b349) WriteChannelRevoked(channel string) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeString(writer, channel)
-	return client.WritePacket(BanchoChannelRevoked, writer.Bytes())
-}
+func (client *b354) WriteBeatmapInfoReply(reply BeatmapInfoReply) error {
+	buffer := bytes.NewBuffer([]byte{})
+	writeInt32(buffer, int32(len(reply.Beatmaps)))
 
-func (client *b349) WriteChannelAvailable(channel Channel) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeString(writer, channel.Name)
-	return client.WritePacket(BanchoChannelAvailable, writer.Bytes())
-}
+	for _, info := range reply.Beatmaps {
+		writeInt16(buffer, info.Index)
+		writeInt32(buffer, info.BeatmapId)
+		writeInt32(buffer, info.BeatmapSetId)
+		writeBoolean(buffer, info.IsRanked())
+		writeInt8(buffer, info.OsuRank)
+		writeString(buffer, info.Checksum)
+	}
 
-func (client *b349) WriteChannelAvailableAutojoin(channel Channel) error {
-	writer := bytes.NewBuffer([]byte{})
-	writeString(writer, channel.Name)
-	return client.WritePacket(BanchoChannelAvailableAutojoin, writer.Bytes())
+	return nil
 }
