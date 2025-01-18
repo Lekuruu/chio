@@ -248,6 +248,7 @@ func (client *b354) WriteBeatmapInfoReply(reply BeatmapInfoReply) error {
 		writeInt16(buffer, info.Index)
 		writeInt32(buffer, info.BeatmapId)
 		writeInt32(buffer, info.BeatmapSetId)
+		writeInt32(buffer, info.ThreadId)
 		writeBoolean(buffer, info.IsRanked())
 		writeInt8(buffer, info.OsuRank)
 		writeString(buffer, info.Checksum)
