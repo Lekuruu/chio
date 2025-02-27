@@ -4,6 +4,7 @@ Chio (Bancho Input/Output) is a bancho packet serialization library written in g
 
 > [!WARNING]
 > This project is a work in progress and is not ready for production usage yet.
+> For a full implementation, please view [chio.py](https://github.com/Lekuruu/chio.py)!
 
 ## Example Usage
 
