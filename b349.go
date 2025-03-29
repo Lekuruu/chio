@@ -11,40 +11,6 @@ type b349 struct {
 	*b342
 }
 
-func (client *b349) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
-	// Convert packetId back for the client
-	packetId = client.ConvertOutputPacketId(packetId)
-	compressionEnabled := len(data) >= 150
-	writer := bytes.NewBuffer([]byte{})
-
-	err := writeUint16(writer, packetId)
-	if err != nil {
-		return err
-	}
-
-	err = writeBoolean(writer, compressionEnabled)
-	if err != nil {
-		return err
-	}
-
-	if compressionEnabled {
-		data = compressData(data)
-	}
-
-	err = writeUint32(writer, uint32(len(data)))
-	if err != nil {
-		return err
-	}
-
-	_, err = writer.Write(data)
-	if err != nil {
-		return err
-	}
-
-	_, err = stream.Write(writer.Bytes())
-	return err
-}
-
 func (client *b349) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
 	packet.Id, err = readUint16(stream)
