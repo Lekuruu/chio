@@ -810,3 +810,21 @@ var CountryCodes []string = []string{
 	"BL",
 	"MF",
 }
+
+func GetCountryIndexFromCode(code string) int8 {
+	for i, c := range CountryCodes {
+		if c == code {
+			return int8(i)
+		}
+	}
+	return 0
+}
+
+func GetCountryIndexFromName(name string) int8 {
+	for i, c := range CountryNames {
+		if c == name {
+			return int8(i)
+		}
+	}
+	return 0
+}
