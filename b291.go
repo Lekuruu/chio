@@ -3,6 +3,7 @@ package chio
 import (
 	"bytes"
 	"fmt"
+	"io"
 )
 
 // b291 implements the GetAttension & Announce packets
@@ -10,12 +11,7 @@ type b291 struct {
 	*b282
 }
 
-func (client *b291) Clone() BanchoIO {
-	previous := b282{}
-	return &b291{previous.Clone().(*b282)}
-}
-
-func (client *b291) WritePacket(packetId uint16, data []byte) error {
+func (client *b291) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -36,13 +32,13 @@ func (client *b291) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b291) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b291) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +50,13 @@ func (client *b291) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -126,12 +122,12 @@ func (client *b291) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b291) WriteGetAttention() error {
-	return client.WritePacket(BanchoGetAttention, []byte{})
+func (client *b291) WriteGetAttention(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoGetAttention, []byte{})
 }
 
-func (client *b291) WriteAnnouncement(message string) error {
+func (client *b291) WriteAnnouncement(stream io.Writer, message string) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, message)
-	return client.WritePacket(BanchoAnnounce, writer.Bytes())
+	return client.WritePacket(stream, BanchoAnnounce, writer.Bytes())
 }

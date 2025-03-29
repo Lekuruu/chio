@@ -11,12 +11,7 @@ type b340 struct {
 	*b338
 }
 
-func (client *b340) Clone() BanchoIO {
-	previous := b338{}
-	return &b340{previous.Clone().(*b338)}
-}
-
-func (client *b340) WritePacket(packetId uint16, data []byte) error {
+func (client *b340) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	compressionEnabled := len(data) >= 150
@@ -46,13 +41,13 @@ func (client *b340) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b340) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b340) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +59,18 @@ func (client *b340) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	compressionEnabled, err := readBoolean(client.stream)
+	compressionEnabled, err := readBoolean(stream)
 	if err != nil {
 		return nil, err
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	data := make([]byte, length)
-	n, err := client.stream.Read(data)
+	n, err := stream.Read(data)
 	if err != nil {
 		return nil, err
 	}
@@ -231,20 +226,20 @@ func (client *b340) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b340) WriteMatchTransferHost() error {
-	return client.WritePacket(BanchoMatchTransferHost, []byte{})
+func (client *b340) WriteMatchTransferHost(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoMatchTransferHost, []byte{})
 }
 
-func (client *b340) WriteMatchAllPlayersLoaded() error {
-	return client.WritePacket(BanchoMatchAllPlayersLoaded, []byte{})
+func (client *b340) WriteMatchAllPlayersLoaded(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoMatchAllPlayersLoaded, []byte{})
 }
 
-func (client *b340) WriteMatchComplete() error {
-	return client.WritePacket(BanchoMatchComplete, []byte{})
+func (client *b340) WriteMatchComplete(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoMatchComplete, []byte{})
 }
 
-func (client *b340) WriteMatchPlayerFailed(slotId uint32) error {
+func (client *b340) WriteMatchPlayerFailed(stream io.Writer, slotId uint32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeUint32(writer, slotId)
-	return client.WritePacket(BanchoMatchPlayerFailed, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchPlayerFailed, writer.Bytes())
 }

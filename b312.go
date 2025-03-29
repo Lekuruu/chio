@@ -12,12 +12,7 @@ type b312 struct {
 	*b298
 }
 
-func (client *b312) Clone() BanchoIO {
-	previous := b298{}
-	return &b312{previous.Clone().(*b298)}
-}
-
-func (client *b312) WritePacket(packetId uint16, data []byte) error {
+func (client *b312) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -38,13 +33,13 @@ func (client *b312) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b312) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b312) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -56,13 +51,13 @@ func (client *b312) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -185,32 +180,32 @@ func (client *b312) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 
 /* New Packets */
 
-func (client *b312) WriteMatchStart(match Match) error {
-	return client.WritePacket(BanchoMatchStart, []byte{})
+func (client *b312) WriteMatchStart(stream io.Writer, match Match) error {
+	return client.WritePacket(stream, BanchoMatchStart, []byte{})
 }
 
-func (client *b312) WriteMatchScoreUpdate(frame ScoreFrame) error {
+func (client *b312) WriteMatchScoreUpdate(stream io.Writer, frame ScoreFrame) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteScoreFrame(writer, frame)
-	return client.WritePacket(BanchoMatchScoreUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchScoreUpdate, writer.Bytes())
 }
 
-func (client *b312) WriteMatchUpdate(match Match) error {
+func (client *b312) WriteMatchUpdate(stream io.Writer, match Match) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchUpdate, writer.Bytes())
 }
 
-func (client *b312) WriteMatchNew(match Match) error {
+func (client *b312) WriteMatchNew(stream io.Writer, match Match) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchNew, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchNew, writer.Bytes())
 }
 
-func (client *b312) WriteMatchJoinSuccess(match Match) error {
+func (client *b312) WriteMatchJoinSuccess(stream io.Writer, match Match) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchJoinSuccess, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchJoinSuccess, writer.Bytes())
 }
 
 func (client *b312) WriteMatch(writer io.Writer, match Match) error {

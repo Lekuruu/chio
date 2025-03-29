@@ -10,35 +10,11 @@ import (
 // Every following version will be based on it.
 type b282 struct {
 	BanchoIO
-	stream           io.ReadWriteCloser
 	supportedPackets []uint16
+	slotSize         int
 }
 
-func (client *b282) Write(p []byte) (n int, err error) {
-	return client.stream.Write(p)
-}
-
-func (client *b282) Read(p []byte) (n int, err error) {
-	return client.stream.Read(p)
-}
-
-func (client *b282) Close() error {
-	return client.stream.Close()
-}
-
-func (client *b282) Clone() BanchoIO {
-	return &b282{}
-}
-
-func (client *b282) GetStream() io.ReadWriteCloser {
-	return client.stream
-}
-
-func (client *b282) SetStream(stream io.ReadWriteCloser) {
-	client.stream = stream
-}
-
-func (client *b282) WritePacket(packetId uint16, data []byte) error {
+func (client *b282) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -59,13 +35,13 @@ func (client *b282) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b282) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -77,13 +53,13 @@ func (client *b282) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -196,13 +172,13 @@ func (client *b282) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-func (client *b282) WriteLoginReply(reply int32) error {
+func (client *b282) WriteLoginReply(stream io.Writer, reply int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, reply)
-	return client.WritePacket(BanchoLoginReply, writer.Bytes())
+	return client.WritePacket(stream, BanchoLoginReply, writer.Bytes())
 }
 
-func (client *b282) WriteMessage(message Message) error {
+func (client *b282) WriteMessage(stream io.Writer, message Message) error {
 	if message.Target != "#osu" {
 		// Private messages & channels have not been implemented yet
 		return nil
@@ -211,37 +187,37 @@ func (client *b282) WriteMessage(message Message) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, message.Sender)
 	writeString(writer, message.Content)
-	return client.WritePacket(BanchoSendMessage, writer.Bytes())
+	return client.WritePacket(stream, BanchoSendMessage, writer.Bytes())
 }
 
-func (client *b282) WritePing() error {
-	return client.WritePacket(BanchoPing, []byte{})
+func (client *b282) WritePing(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoPing, []byte{})
 }
 
-func (client *b282) WriteIrcChangeUsername(oldName string, newName string) error {
+func (client *b282) WriteIrcChangeUsername(stream io.Writer, oldName string, newName string) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, fmt.Sprintf("%s>>>>%s", oldName, newName))
-	return client.WritePacket(BanchoHandleIrcChangeUsername, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleIrcChangeUsername, writer.Bytes())
 }
 
-func (client *b282) WriteUserStats(info UserInfo) error {
+func (client *b282) WriteUserStats(stream io.Writer, info UserInfo) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if info.Presence.IsIrc {
 		writeString(writer, info.Name)
-		return client.WritePacket(BanchoHandleIrcJoin, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcJoin, writer.Bytes())
 	}
 
 	client.WriteStats(writer, info)
-	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleOsuUpdate, writer.Bytes())
 }
 
-func (client *b282) WriteUserQuit(quit UserQuit) error {
+func (client *b282) WriteUserQuit(stream io.Writer, quit UserQuit) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if quit.Info.Presence.IsIrc && quit.QuitState != QuitStateIrcRemaining {
 		writeString(writer, quit.Info.Name)
-		return client.WritePacket(BanchoHandleIrcQuit, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcQuit, writer.Bytes())
 	}
 
 	if quit.QuitState == QuitStateOsuRemaining {
@@ -249,22 +225,22 @@ func (client *b282) WriteUserQuit(quit UserQuit) error {
 	}
 
 	client.WriteStats(writer, *quit.Info)
-	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleOsuQuit, writer.Bytes())
 }
 
-func (client *b282) WriteSpectatorJoined(userId int32) error {
+func (client *b282) WriteSpectatorJoined(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoSpectatorJoined, writer.Bytes())
+	return client.WritePacket(stream, BanchoSpectatorJoined, writer.Bytes())
 }
 
-func (client *b282) WriteSpectatorLeft(userId int32) error {
+func (client *b282) WriteSpectatorLeft(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoSpectatorLeft, writer.Bytes())
+	return client.WritePacket(stream, BanchoSpectatorLeft, writer.Bytes())
 }
 
-func (client *b282) WriteSpectateFrames(bundle ReplayFrameBundle) error {
+func (client *b282) WriteSpectateFrames(stream io.Writer, bundle ReplayFrameBundle) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeUint16(writer, uint16(len(bundle.Frames)))
 
@@ -281,17 +257,17 @@ func (client *b282) WriteSpectateFrames(bundle ReplayFrameBundle) error {
 	}
 
 	writeUint8(writer, bundle.Action)
-	return client.WritePacket(BanchoSpectateFrames, writer.Bytes())
+	return client.WritePacket(stream, BanchoSpectateFrames, writer.Bytes())
 }
 
-func (client *b282) WriteVersionUpdate() error {
-	return client.WritePacket(BanchoVersionUpdate, []byte{})
+func (client *b282) WriteVersionUpdate(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoVersionUpdate, []byte{})
 }
 
-func (client *b282) WriteSpectatorCantSpectate(userId int32) error {
+func (client *b282) WriteSpectatorCantSpectate(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoSpectatorCantSpectate, writer.Bytes())
+	return client.WritePacket(stream, BanchoSpectatorCantSpectate, writer.Bytes())
 }
 
 func (client *b282) WriteStatus(writer io.Writer, status *UserStatus) error {
@@ -331,17 +307,17 @@ func (client *b282) WriteStats(writer io.Writer, info UserInfo) error {
 }
 
 // Redirect UserPresence packets to UserStats
-func (client *b282) WriteUserPresence(info UserInfo) error {
-	return client.WriteUserStats(info)
+func (client *b282) WriteUserPresence(stream io.Writer, info UserInfo) error {
+	return client.WriteUserStats(stream, info)
 }
 
-func (client *b282) WriteUserPresenceSingle(info UserInfo) error {
-	return client.WriteUserPresence(info)
+func (client *b282) WriteUserPresenceSingle(stream io.Writer, info UserInfo) error {
+	return client.WriteUserPresence(stream, info)
 }
 
-func (client *b282) WriteUserPresenceBundle(infos []UserInfo) error {
+func (client *b282) WriteUserPresenceBundle(stream io.Writer, infos []UserInfo) error {
 	for _, info := range infos {
-		err := client.WriteUserPresence(info)
+		err := client.WriteUserPresence(stream, info)
 		if err != nil {
 			return err
 		}
@@ -437,47 +413,49 @@ func (client *b282) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 
 /* Unsupported Packets */
 
-func (client *b282) WriteGetAttention() error                            { return nil }
-func (client *b282) WriteAnnouncement(message string) error              { return nil }
-func (client *b282) WriteMatchUpdate(match Match) error                  { return nil }
-func (client *b282) WriteMatchNew(match Match) error                     { return nil }
-func (client *b282) WriteMatchDisband(matchId int32) error               { return nil }
-func (client *b282) WriteLobbyJoin(userId int32) error                   { return nil }
-func (client *b282) WriteLobbyPart(userId int32) error                   { return nil }
-func (client *b282) WriteMatchJoinSuccess(match Match) error             { return nil }
-func (client *b282) WriteMatchJoinFail() error                           { return nil }
-func (client *b282) WriteFellowSpectatorJoined(userId int32) error       { return nil }
-func (client *b282) WriteFellowSpectatorLeft(userId int32) error         { return nil }
-func (client *b282) WriteMatchStart(match Match) error                   { return nil }
-func (client *b282) WriteMatchScoreUpdate(frame ScoreFrame) error        { return nil }
-func (client *b282) WriteMatchTransferHost() error                       { return nil }
-func (client *b282) WriteMatchAllPlayersLoaded() error                   { return nil }
-func (client *b282) WriteMatchPlayerFailed(slotId uint32) error          { return nil }
-func (client *b282) WriteMatchComplete() error                           { return nil }
-func (client *b282) WriteMatchSkip() error                               { return nil }
-func (client *b282) WriteUnauthorized() error                            { return nil }
-func (client *b282) WriteChannelJoinSuccess(channel string) error        { return nil }
-func (client *b282) WriteChannelRevoked(channel string) error            { return nil }
-func (client *b282) WriteChannelAvailable(channel Channel) error         { return nil }
-func (client *b282) WriteChannelAvailableAutojoin(channel Channel) error { return nil }
-func (client *b282) WriteBeatmapInfoReply(reply BeatmapInfoReply) error  { return nil }
-func (client *b282) WriteLoginPermissions(permissions uint32) error      { return nil }
-func (client *b282) WriteFriendsList(userIds []uint32) error             { return nil }
-func (client *b282) WriteProtocolNegotiation(version int32) error        { return nil }
-func (client *b282) WriteTitleUpdate(update TitleUpdate) error           { return nil }
-func (client *b282) WriteMonitor() error                                 { return nil }
-func (client *b282) WriteMatchPlayerSkipped(slotId int32) error          { return nil }
-func (client *b282) WriteRestart(retryMs int32) error                    { return nil }
-func (client *b282) WriteInvite(message Message) error                   { return nil }
-func (client *b282) WriteChannelInfoComplete() error                     { return nil }
-func (client *b282) WriteMatchChangePassword(password string) error      { return nil }
-func (client *b282) WriteSilenceInfo(timeRemaining int32) error          { return nil }
-func (client *b282) WriteUserSilenced(userId uint32) error               { return nil }
-func (client *b282) WriteUserDMsBlocked(targetName string) error         { return nil }
-func (client *b282) WriteTargetIsSilenced(targetName string) error       { return nil }
-func (client *b282) WriteVersionUpdateForced() error                     { return nil }
-func (client *b282) WriteSwitchServer(target int32) error                { return nil }
-func (client *b282) WriteAccountRestricted() error                       { return nil }
-func (client *b282) WriteRTX(message string) error                       { return nil }
-func (client *b282) WriteMatchAbort() error                              { return nil }
-func (client *b282) WriteSwitchTournamentServer(ip string) error         { return nil }
+func (client *b282) WriteGetAttention(stream io.Writer) error                        { return nil }
+func (client *b282) WriteAnnouncement(stream io.Writer, message string) error        { return nil }
+func (client *b282) WriteMatchUpdate(stream io.Writer, match Match) error            { return nil }
+func (client *b282) WriteMatchNew(stream io.Writer, match Match) error               { return nil }
+func (client *b282) WriteMatchDisband(stream io.Writer, matchId int32) error         { return nil }
+func (client *b282) WriteLobbyJoin(stream io.Writer, userId int32) error             { return nil }
+func (client *b282) WriteLobbyPart(stream io.Writer, userId int32) error             { return nil }
+func (client *b282) WriteMatchJoinSuccess(stream io.Writer, match Match) error       { return nil }
+func (client *b282) WriteMatchJoinFail(stream io.Writer) error                       { return nil }
+func (client *b282) WriteFellowSpectatorJoined(stream io.Writer, userId int32) error { return nil }
+func (client *b282) WriteFellowSpectatorLeft(stream io.Writer, userId int32) error   { return nil }
+func (client *b282) WriteMatchStart(stream io.Writer, match Match) error             { return nil }
+func (client *b282) WriteMatchScoreUpdate(stream io.Writer, frame ScoreFrame) error  { return nil }
+func (client *b282) WriteMatchTransferHost(stream io.Writer) error                   { return nil }
+func (client *b282) WriteMatchAllPlayersLoaded(stream io.Writer) error               { return nil }
+func (client *b282) WriteMatchPlayerFailed(stream io.Writer, slotId uint32) error    { return nil }
+func (client *b282) WriteMatchComplete(stream io.Writer) error                       { return nil }
+func (client *b282) WriteMatchSkip(stream io.Writer) error                           { return nil }
+func (client *b282) WriteUnauthorized(stream io.Writer) error                        { return nil }
+func (client *b282) WriteChannelJoinSuccess(stream io.Writer, channel string) error  { return nil }
+func (client *b282) WriteChannelRevoked(stream io.Writer, channel string) error      { return nil }
+func (client *b282) WriteChannelAvailable(stream io.Writer, channel Channel) error   { return nil }
+func (client *b282) WriteChannelAvailableAutojoin(stream io.Writer, channel Channel) error {
+	return nil // what the fuck golang
+}
+func (client *b282) WriteBeatmapInfoReply(stream io.Writer, reply BeatmapInfoReply) error { return nil }
+func (client *b282) WriteLoginPermissions(stream io.Writer, permissions uint32) error     { return nil }
+func (client *b282) WriteFriendsList(stream io.Writer, userIds []uint32) error            { return nil }
+func (client *b282) WriteProtocolNegotiation(stream io.Writer, version int32) error       { return nil }
+func (client *b282) WriteTitleUpdate(stream io.Writer, update TitleUpdate) error          { return nil }
+func (client *b282) WriteMonitor(stream io.Writer) error                                  { return nil }
+func (client *b282) WriteMatchPlayerSkipped(stream io.Writer, slotId int32) error         { return nil }
+func (client *b282) WriteRestart(stream io.Writer, retryMs int32) error                   { return nil }
+func (client *b282) WriteInvite(stream io.Writer, message Message) error                  { return nil }
+func (client *b282) WriteChannelInfoComplete(stream io.Writer) error                      { return nil }
+func (client *b282) WriteMatchChangePassword(stream io.Writer, password string) error     { return nil }
+func (client *b282) WriteSilenceInfo(stream io.Writer, timeRemaining int32) error         { return nil }
+func (client *b282) WriteUserSilenced(stream io.Writer, userId uint32) error              { return nil }
+func (client *b282) WriteUserDMsBlocked(stream io.Writer, targetName string) error        { return nil }
+func (client *b282) WriteTargetIsSilenced(stream io.Writer, targetName string) error      { return nil }
+func (client *b282) WriteVersionUpdateForced(stream io.Writer) error                      { return nil }
+func (client *b282) WriteSwitchServer(stream io.Writer, target int32) error               { return nil }
+func (client *b282) WriteAccountRestricted(stream io.Writer) error                        { return nil }
+func (client *b282) WriteRTX(stream io.Writer, message string) error                      { return nil }
+func (client *b282) WriteMatchAbort(stream io.Writer) error                               { return nil }
+func (client *b282) WriteSwitchTournamentServer(stream io.Writer, ip string) error        { return nil }

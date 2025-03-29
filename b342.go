@@ -11,12 +11,7 @@ type b342 struct {
 	*b340
 }
 
-func (client *b342) Clone() BanchoIO {
-	previous := b340{}
-	return &b342{previous.Clone().(*b340)}
-}
-
-func (client *b342) WritePacket(packetId uint16, data []byte) error {
+func (client *b342) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	compressionEnabled := len(data) >= 150
@@ -46,13 +41,13 @@ func (client *b342) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b342) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b342) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +59,18 @@ func (client *b342) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	compressionEnabled, err := readBoolean(client.stream)
+	compressionEnabled, err := readBoolean(stream)
 	if err != nil {
 		return nil, err
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	data := make([]byte, length)
-	n, err := client.stream.Read(data)
+	n, err := stream.Read(data)
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +206,6 @@ func (client *b342) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b342) WriteMatchSkip() error {
-	return client.WritePacket(BanchoMatchSkip, []byte{})
+func (client *b342) WriteMatchSkip(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoMatchSkip, []byte{})
 }

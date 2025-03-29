@@ -11,12 +11,7 @@ type b296 struct {
 	*b294
 }
 
-func (client *b296) Clone() BanchoIO {
-	previous := &b294{}
-	return &b296{previous.Clone().(*b294)}
-}
-
-func (client *b296) WritePacket(packetId uint16, data []byte) error {
+func (client *b296) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -37,13 +32,13 @@ func (client *b296) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b296) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b296) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +50,13 @@ func (client *b296) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +97,7 @@ func (client *b296) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-func (client *b296) WriteSpectateFrames(bundle ReplayFrameBundle) error {
+func (client *b296) WriteSpectateFrames(stream io.Writer, bundle ReplayFrameBundle) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeUint16(writer, uint16(len(bundle.Frames)))
 
@@ -124,7 +119,7 @@ func (client *b296) WriteSpectateFrames(bundle ReplayFrameBundle) error {
 		client.WriteScoreFrame(writer, *bundle.Frame)
 	}
 
-	return client.WritePacket(BanchoSpectateFrames, writer.Bytes())
+	return client.WritePacket(stream, BanchoSpectateFrames, writer.Bytes())
 }
 
 func (client *b296) WriteScoreFrame(writer io.Writer, frame ScoreFrame) error {

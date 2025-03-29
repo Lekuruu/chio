@@ -10,18 +10,9 @@ import (
 // and adds the "MatchChangeBeatmap" packet
 type b323 struct {
 	*b320
-	userMap map[int32]bool
 }
 
-func (client *b323) Clone() BanchoIO {
-	previous := b320{}
-	return &b323{
-		previous.Clone().(*b320),
-		make(map[int32]bool),
-	}
-}
-
-func (client *b323) WritePacket(packetId uint16, data []byte) error {
+func (client *b323) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -42,13 +33,13 @@ func (client *b323) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b323) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b323) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +51,13 @@ func (client *b323) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -221,15 +212,10 @@ func (client *b323) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 }
 
 func (client *b323) WriteStats(writer io.Writer, info UserInfo) error {
-	// Stats will be written if the user has not been
-	// sent before or if the server has a stats update
-	_, hasSeenUser := client.userMap[info.Id]
-	writeStats := !hasSeenUser || info.Status.UpdateStats
-
 	writeInt32(writer, info.Id)
-	writeBoolean(writer, writeStats)
+	writeBoolean(writer, info.Status.UpdateStats)
 
-	if writeStats {
+	if info.Status.UpdateStats {
 		writeString(writer, info.Name)
 		writeUint64(writer, info.Stats.Rscore)
 		writeFloat32(writer, float32(info.Stats.Accuracy))
@@ -241,53 +227,60 @@ func (client *b323) WriteStats(writer io.Writer, info UserInfo) error {
 		writeString(writer, info.Presence.City)
 	}
 
-	client.userMap[info.Id] = true
 	client.WriteStatus(writer, info.Status)
 	return nil
 }
 
-func (client *b323) WriteUserStats(info UserInfo) error {
+func (client *b323) WriteUserStats(stream io.Writer, info UserInfo) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if info.Presence.IsIrc {
 		writeString(writer, info.Name)
-		return client.WritePacket(BanchoHandleIrcJoin, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcJoin, writer.Bytes())
 	}
 
+	// We assume that the client has not seen this user before, so
+	// we send two packets: one for the user stats, and one for the "presence".
+	info.Status.UpdateStats = true
 	client.WriteStats(writer, info)
-	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
+
+	if err := client.WritePacket(stream, BanchoHandleOsuUpdate, writer.Bytes()); err != nil {
+		return err
+	}
+
+	writer.Reset()
+	info.Status.UpdateStats = false
+	client.WriteStats(writer, info)
+	return client.WritePacket(stream, BanchoHandleOsuUpdate, writer.Bytes())
 }
 
-func (client *b323) WriteUserQuit(quit UserQuit) error {
+func (client *b323) WriteUserQuit(stream io.Writer, quit UserQuit) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if quit.Info.Presence.IsIrc && quit.QuitState != QuitStateIrcRemaining {
 		writeString(writer, quit.Info.Name)
-		return client.WritePacket(BanchoHandleIrcQuit, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcQuit, writer.Bytes())
 	}
 
 	if quit.QuitState == QuitStateOsuRemaining {
 		return nil
 	}
 
-	// Remove from user map
-	delete(client.userMap, quit.Info.Id)
-
 	client.WriteStats(writer, *quit.Info)
-	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleOsuQuit, writer.Bytes())
 }
 
-func (client *b323) WriteUserPresence(info UserInfo) error {
-	return client.WriteUserStats(info)
+func (client *b323) WriteUserPresence(stream io.Writer, info UserInfo) error {
+	return client.WriteUserStats(stream, info)
 }
 
-func (client *b323) WriteUserPresenceSingle(info UserInfo) error {
-	return client.WriteUserPresence(info)
+func (client *b323) WriteUserPresenceSingle(stream io.Writer, info UserInfo) error {
+	return client.WriteUserPresence(stream, info)
 }
 
-func (client *b323) WriteUserPresenceBundle(infos []UserInfo) error {
+func (client *b323) WriteUserPresenceBundle(stream io.Writer, infos []UserInfo) error {
 	for _, info := range infos {
-		err := client.WriteUserPresence(info)
+		err := client.WriteUserPresence(stream, info)
 		if err != nil {
 			return err
 		}
@@ -295,8 +288,8 @@ func (client *b323) WriteUserPresenceBundle(infos []UserInfo) error {
 	return nil
 }
 
-func (client *b323) WriteMatchScoreUpdate(frame ScoreFrame) error {
+func (client *b323) WriteMatchScoreUpdate(stream io.Writer, frame ScoreFrame) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteScoreFrame(writer, frame)
-	return client.WritePacket(BanchoMatchScoreUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchScoreUpdate, writer.Bytes())
 }

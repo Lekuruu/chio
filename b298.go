@@ -8,19 +8,10 @@ import (
 
 // b298 adds a partial implementation of multiplayer, as well as fellow spectators
 type b298 struct {
-	slotSize int
 	*b296
 }
 
-func (client *b298) Clone() BanchoIO {
-	previous := b296{}
-	return &b298{
-		b296:     previous.Clone().(*b296),
-		slotSize: 8,
-	}
-}
-
-func (client *b298) WritePacket(packetId uint16, data []byte) error {
+func (client *b298) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -41,13 +32,13 @@ func (client *b298) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b298) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b298) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +50,13 @@ func (client *b298) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -219,56 +210,56 @@ func (client *b298) WriteMatch(writer io.Writer, match Match) error {
 	return nil
 }
 
-func (client *b298) WriteMatchUpdate(match Match) error {
+func (client *b298) WriteMatchUpdate(stream io.Writer, match Match) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchUpdate, writer.Bytes())
 }
 
-func (client *b298) WriteMatchNew(match Match) error {
+func (client *b298) WriteMatchNew(stream io.Writer, match Match) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchNew, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchNew, writer.Bytes())
 }
 
-func (client *b298) WriteMatchDisband(matchId int32) error {
+func (client *b298) WriteMatchDisband(stream io.Writer, matchId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, matchId)
-	return client.WritePacket(BanchoMatchDisband, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchDisband, writer.Bytes())
 }
 
-func (client *b298) WriteLobbyJoin(userId int32) error {
+func (client *b298) WriteLobbyJoin(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoLobbyJoin, writer.Bytes())
+	return client.WritePacket(stream, BanchoLobbyJoin, writer.Bytes())
 }
 
-func (client *b298) WriteLobbyPart(userId int32) error {
+func (client *b298) WriteLobbyPart(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoLobbyPart, writer.Bytes())
+	return client.WritePacket(stream, BanchoLobbyPart, writer.Bytes())
 }
 
-func (client *b298) WriteMatchJoinSuccess(match Match) error {
+func (client *b298) WriteMatchJoinSuccess(stream io.Writer, match Match) error {
 	writer := bytes.NewBuffer([]byte{})
 	client.WriteMatch(writer, match)
-	return client.WritePacket(BanchoMatchJoinSuccess, writer.Bytes())
+	return client.WritePacket(stream, BanchoMatchJoinSuccess, writer.Bytes())
 }
 
-func (client *b298) WriteMatchJoinFail() error {
-	return client.WritePacket(BanchoMatchJoinFail, []byte{})
+func (client *b298) WriteMatchJoinFail(stream io.Writer) error {
+	return client.WritePacket(stream, BanchoMatchJoinFail, []byte{})
 }
 
-func (client *b298) WriteFellowSpectatorJoined(userId int32) error {
+func (client *b298) WriteFellowSpectatorJoined(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoFellowSpectatorJoined, writer.Bytes())
+	return client.WritePacket(stream, BanchoFellowSpectatorJoined, writer.Bytes())
 }
 
-func (client *b298) WriteFellowSpectatorLeft(userId int32) error {
+func (client *b298) WriteFellowSpectatorLeft(stream io.Writer, userId int32) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeInt32(writer, userId)
-	return client.WritePacket(BanchoFellowSpectatorLeft, writer.Bytes())
+	return client.WritePacket(stream, BanchoFellowSpectatorLeft, writer.Bytes())
 }
 
 func (client *b298) ReadMatch(reader io.Reader) (*Match, error) {

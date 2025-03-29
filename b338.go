@@ -11,12 +11,7 @@ type b338 struct {
 	*b334
 }
 
-func (client *b338) Clone() BanchoIO {
-	previous := b334{}
-	return &b338{previous.Clone().(*b334)}
-}
-
-func (client *b338) WritePacket(packetId uint16, data []byte) error {
+func (client *b338) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	compressionEnabled := len(data) >= 150
@@ -46,13 +41,13 @@ func (client *b338) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b338) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b338) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +59,18 @@ func (client *b338) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	compressionEnabled, err := readBoolean(client.stream)
+	compressionEnabled, err := readBoolean(stream)
 	if err != nil {
 		return nil, err
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	data := make([]byte, length)
-	n, err := client.stream.Read(data)
+	n, err := stream.Read(data)
 	if err != nil {
 		return nil, err
 	}
@@ -191,44 +186,41 @@ func (client *b338) WriteStats(writer io.Writer, info UserInfo) error {
 	return nil
 }
 
-func (client *b338) WriteUserStats(info UserInfo) error {
+func (client *b338) WriteUserStats(stream io.Writer, info UserInfo) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if info.Presence.IsIrc {
 		writeString(writer, info.Name)
-		return client.WritePacket(BanchoHandleIrcJoin, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcJoin, writer.Bytes())
 	}
 
 	client.WriteStats(writer, info)
-	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleOsuUpdate, writer.Bytes())
 }
 
-func (client *b338) WriteUserQuit(quit UserQuit) error {
+func (client *b338) WriteUserQuit(stream io.Writer, quit UserQuit) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if quit.Info.Presence.IsIrc && quit.QuitState != QuitStateIrcRemaining {
 		writeString(writer, quit.Info.Name)
-		return client.WritePacket(BanchoHandleIrcQuit, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcQuit, writer.Bytes())
 	}
 
 	if quit.QuitState == QuitStateOsuRemaining {
 		return nil
 	}
 
-	// Remove from user map
-	delete(client.userMap, quit.Info.Id)
-
 	client.WriteStats(writer, *quit.Info)
-	return client.WritePacket(BanchoHandleOsuQuit, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleOsuQuit, writer.Bytes())
 }
 
 // Use CompletenessFull to achieve the same effect as presence
-func (client *b338) WriteUserPresence(info UserInfo) error {
+func (client *b338) WriteUserPresence(stream io.Writer, info UserInfo) error {
 	writer := bytes.NewBuffer([]byte{})
 
 	if info.Presence.IsIrc {
 		writeString(writer, info.Name)
-		return client.WritePacket(BanchoHandleIrcJoin, writer.Bytes())
+		return client.WritePacket(stream, BanchoHandleIrcJoin, writer.Bytes())
 	}
 
 	writeInt32(writer, info.Id)
@@ -243,16 +235,16 @@ func (client *b338) WriteUserPresence(info UserInfo) error {
 	writeString(writer, info.AvatarFilename())
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
 	writeString(writer, info.Presence.City)
-	return client.WritePacket(BanchoHandleOsuUpdate, writer.Bytes())
+	return client.WritePacket(stream, BanchoHandleOsuUpdate, writer.Bytes())
 }
 
-func (client *b338) WriteUserPresenceSingle(info UserInfo) error {
-	return client.WriteUserPresence(info)
+func (client *b338) WriteUserPresenceSingle(stream io.Writer, info UserInfo) error {
+	return client.WriteUserPresence(stream, info)
 }
 
-func (client *b338) WriteUserPresenceBundle(infos []UserInfo) error {
+func (client *b338) WriteUserPresenceBundle(stream io.Writer, infos []UserInfo) error {
 	for _, info := range infos {
-		err := client.WriteUserPresence(info)
+		err := client.WriteUserPresence(stream, info)
 		if err != nil {
 			return err
 		}

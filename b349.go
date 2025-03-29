@@ -11,12 +11,7 @@ type b349 struct {
 	*b342
 }
 
-func (client *b349) Clone() BanchoIO {
-	previous := b342{}
-	return &b349{previous.Clone().(*b342)}
-}
-
-func (client *b349) WritePacket(packetId uint16, data []byte) error {
+func (client *b349) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	compressionEnabled := len(data) >= 150
@@ -46,13 +41,13 @@ func (client *b349) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b349) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b349) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +59,18 @@ func (client *b349) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	compressionEnabled, err := readBoolean(client.stream)
+	compressionEnabled, err := readBoolean(stream)
 	if err != nil {
 		return nil, err
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	data := make([]byte, length)
-	n, err := client.stream.Read(data)
+	n, err := stream.Read(data)
 	if err != nil {
 		return nil, err
 	}
@@ -220,26 +215,26 @@ func (client *b349) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b349) WriteChannelJoinSuccess(channel string) error {
+func (client *b349) WriteChannelJoinSuccess(stream io.Writer, channel string) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, channel)
-	return client.WritePacket(BanchoChannelJoinSuccess, writer.Bytes())
+	return client.WritePacket(stream, BanchoChannelJoinSuccess, writer.Bytes())
 }
 
-func (client *b349) WriteChannelRevoked(channel string) error {
+func (client *b349) WriteChannelRevoked(stream io.Writer, channel string) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, channel)
-	return client.WritePacket(BanchoChannelRevoked, writer.Bytes())
+	return client.WritePacket(stream, BanchoChannelRevoked, writer.Bytes())
 }
 
-func (client *b349) WriteChannelAvailable(channel Channel) error {
+func (client *b349) WriteChannelAvailable(stream io.Writer, channel Channel) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, channel.Name)
-	return client.WritePacket(BanchoChannelAvailable, writer.Bytes())
+	return client.WritePacket(stream, BanchoChannelAvailable, writer.Bytes())
 }
 
-func (client *b349) WriteChannelAvailableAutojoin(channel Channel) error {
+func (client *b349) WriteChannelAvailableAutojoin(stream io.Writer, channel Channel) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, channel.Name)
-	return client.WritePacket(BanchoChannelAvailableAutojoin, writer.Bytes())
+	return client.WritePacket(stream, BanchoChannelAvailableAutojoin, writer.Bytes())
 }

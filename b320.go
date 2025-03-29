@@ -11,12 +11,7 @@ type b320 struct {
 	*b312
 }
 
-func (client *b320) Clone() BanchoIO {
-	previous := b312{}
-	return &b320{previous.Clone().(*b312)}
-}
-
-func (client *b320) WritePacket(packetId uint16, data []byte) error {
+func (client *b320) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -37,13 +32,13 @@ func (client *b320) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b320) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b320) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +50,13 @@ func (client *b320) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -114,12 +109,12 @@ func (client *b320) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-func (client *b320) WriteMessage(message Message) error {
+func (client *b320) WriteMessage(stream io.Writer, message Message) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeString(writer, message.Sender)
 	writeString(writer, message.Content)
 	writeString(writer, message.Target)
-	return client.WritePacket(BanchoSendMessage, writer.Bytes())
+	return client.WritePacket(stream, BanchoSendMessage, writer.Bytes())
 }
 
 func (client *b320) ReadMessage(reader io.Reader) (*Message, error) {

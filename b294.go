@@ -12,12 +12,7 @@ type b294 struct {
 	*b291
 }
 
-func (client *b294) Clone() BanchoIO {
-	previous := &b291{}
-	return &b294{previous.Clone().(*b291)}
-}
-
-func (client *b294) WritePacket(packetId uint16, data []byte) error {
+func (client *b294) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
 	// Convert packetId back for the client
 	packetId = client.ConvertOutputPacketId(packetId)
 	writer := bytes.NewBuffer([]byte{})
@@ -38,13 +33,13 @@ func (client *b294) WritePacket(packetId uint16, data []byte) error {
 		return err
 	}
 
-	_, err = client.Write(writer.Bytes())
+	_, err = stream.Write(writer.Bytes())
 	return err
 }
 
-func (client *b294) ReadPacket() (packet *BanchoPacket, err error) {
+func (client *b294) ReadPacket(stream io.Reader) (packet *BanchoPacket, err error) {
 	packet = &BanchoPacket{}
-	packet.Id, err = readUint16(client.stream)
+	packet.Id, err = readUint16(stream)
 	if err != nil {
 		return nil, err
 	}
@@ -56,13 +51,13 @@ func (client *b294) ReadPacket() (packet *BanchoPacket, err error) {
 		return nil, fmt.Errorf("packet '%d' not implemented", packet.Id)
 	}
 
-	length, err := readInt32(client.stream)
+	length, err := readInt32(stream)
 	if err != nil {
 		return nil, err
 	}
 
 	compressedData := make([]byte, length)
-	n, err := client.stream.Read(compressedData)
+	n, err := stream.Read(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +143,7 @@ func (client *b294) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	}
 }
 
-func (client *b294) WriteMessage(message Message) error {
+func (client *b294) WriteMessage(stream io.Writer, message Message) error {
 	isChannel := strings.HasPrefix(message.Target, "#")
 
 	if isChannel && message.Target != "#osu" {
@@ -160,7 +155,7 @@ func (client *b294) WriteMessage(message Message) error {
 	writeString(writer, message.Sender)
 	writeString(writer, message.Content)
 	writeBoolean(writer, message.Target != "#osu") // IsPrivate
-	return client.WritePacket(BanchoSendMessage, writer.Bytes())
+	return client.WritePacket(stream, BanchoSendMessage, writer.Bytes())
 }
 
 func (client *b294) ReadMessage(reader io.Reader) (*Message, error) {
@@ -198,7 +193,7 @@ func (client *b294) ReadMessagePrivate(reader io.Reader) (*Message, error) {
 	return message, nil
 }
 
-func (client *b294) WriteSpectateFrames(bundle ReplayFrameBundle) error {
+func (client *b294) WriteSpectateFrames(stream io.Writer, bundle ReplayFrameBundle) error {
 	writer := bytes.NewBuffer([]byte{})
 	writeUint16(writer, uint16(len(bundle.Frames)))
 
@@ -220,7 +215,7 @@ func (client *b294) WriteSpectateFrames(bundle ReplayFrameBundle) error {
 		client.WriteScoreFrame(writer, *bundle.Frame)
 	}
 
-	return client.WritePacket(BanchoSpectateFrames, writer.Bytes())
+	return client.WritePacket(stream, BanchoSpectateFrames, writer.Bytes())
 }
 
 func (client *b294) WriteScoreFrame(writer io.Writer, frame ScoreFrame) error {
