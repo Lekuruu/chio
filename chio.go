@@ -155,4 +155,6 @@ func init() {
 	clients[354] = &b354{clients[349].(*b349)}
 	clients[387] = clients[354]
 	clients[388] = &b388{clients[354].(*b354)}
+	clients[401] = clients[388]
+	clients[402] = &b402{clients[388].(*b388)}
 }
