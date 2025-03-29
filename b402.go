@@ -298,3 +298,27 @@ func (client *b402) ReadMatch(reader io.Reader) (*Match, error) {
 	errors.Add(err)
 	return match, errors.Next()
 }
+
+func (client *b402) WriteMatchUpdate(stream io.Writer, match Match) error {
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteMatch(writer, match)
+	return client.WritePacket(stream, BanchoMatchUpdate, writer.Bytes())
+}
+
+func (client *b402) WriteMatchNew(stream io.Writer, match Match) error {
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteMatch(writer, match)
+	return client.WritePacket(stream, BanchoMatchNew, writer.Bytes())
+}
+
+func (client *b402) WriteMatchJoinSuccess(stream io.Writer, match Match) error {
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteMatch(writer, match)
+	return client.WritePacket(stream, BanchoMatchJoinSuccess, writer.Bytes())
+}
+
+func (client *b402) WriteMatchStart(stream io.Writer, match Match) error {
+	writer := bytes.NewBuffer([]byte{})
+	client.WriteMatch(writer, match)
+	return client.WritePacket(stream, BanchoMatchStart, writer.Bytes())
+}
