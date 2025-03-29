@@ -642,7 +642,7 @@ func (client *b334) WriteChannelAvailableAutojoin(stream io.Writer, channel Chan
 }
 func (client *b334) WriteBeatmapInfoReply(stream io.Writer, reply BeatmapInfoReply) error { return nil }
 func (client *b334) WriteLoginPermissions(stream io.Writer, permissions uint32) error     { return nil }
-func (client *b334) WriteFriendsList(stream io.Writer, userIds []uint32) error            { return nil }
+func (client *b334) WriteFriendsList(stream io.Writer, userIds []int32) error             { return nil }
 func (client *b334) WriteProtocolNegotiation(stream io.Writer, version int32) error       { return nil }
 func (client *b334) WriteTitleUpdate(stream io.Writer, update TitleUpdate) error          { return nil }
 func (client *b334) WriteMonitor(stream io.Writer) error                                  { return nil }

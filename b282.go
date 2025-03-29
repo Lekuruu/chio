@@ -440,7 +440,7 @@ func (client *b282) WriteChannelAvailableAutojoin(stream io.Writer, channel Chan
 }
 func (client *b282) WriteBeatmapInfoReply(stream io.Writer, reply BeatmapInfoReply) error { return nil }
 func (client *b282) WriteLoginPermissions(stream io.Writer, permissions uint32) error     { return nil }
-func (client *b282) WriteFriendsList(stream io.Writer, userIds []uint32) error            { return nil }
+func (client *b282) WriteFriendsList(stream io.Writer, userIds []int32) error             { return nil }
 func (client *b282) WriteProtocolNegotiation(stream io.Writer, version int32) error       { return nil }
 func (client *b282) WriteTitleUpdate(stream io.Writer, update TitleUpdate) error          { return nil }
 func (client *b282) WriteMonitor(stream io.Writer) error                                  { return nil }

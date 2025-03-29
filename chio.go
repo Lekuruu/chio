@@ -70,7 +70,7 @@ type BanchoWriters interface {
 	WriteChannelAvailableAutojoin(stream io.Writer, channel Channel) error
 	WriteBeatmapInfoReply(stream io.Writer, reply BeatmapInfoReply) error
 	WriteLoginPermissions(stream io.Writer, permissions uint32) error
-	WriteFriendsList(stream io.Writer, userIds []uint32) error
+	WriteFriendsList(stream io.Writer, userIds []int32) error
 	WriteProtocolNegotiation(stream io.Writer, version int32) error
 	WriteTitleUpdate(stream io.Writer, update TitleUpdate) error
 	WriteMonitor(stream io.Writer) error
@@ -97,7 +97,7 @@ type BanchoWriters interface {
 var clients map[int]BanchoIO = make(map[int]BanchoIO)
 
 const lowestVersion int = 282
-const highestVersion int = 425
+const highestVersion int = 452
 
 // GetClientInterface returns a BanchoIO interface for the given client version
 func GetClientInterface(clientVersion int) BanchoIO {
@@ -159,4 +159,6 @@ func init() {
 	clients[402] = &b402{clients[388].(*b388)}
 	clients[424] = clients[402]
 	clients[425] = &b425{clients[402].(*b402)}
+	clients[451] = clients[425]
+	clients[452] = &b452{clients[425].(*b425)}
 }
