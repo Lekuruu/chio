@@ -234,7 +234,7 @@ func (client *b338) WriteUserPresence(stream io.Writer, info UserInfo) error {
 	writeString(writer, info.Name)
 	writeString(writer, info.AvatarFilename())
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
-	writeString(writer, info.Presence.City)
+	writeString(writer, info.Presence.Location())
 	return client.WritePacket(stream, BanchoHandleOsuUpdate, writer.Bytes())
 }
 

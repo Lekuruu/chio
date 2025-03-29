@@ -30,6 +30,21 @@ type UserPresence struct {
 	City         string
 }
 
+func (presence *UserPresence) CountryName() string {
+	return CountryNames[presence.CountryIndex]
+}
+
+func (presence *UserPresence) CountryCode() string {
+	return CountryCodes[presence.CountryIndex]
+}
+
+func (presence *UserPresence) Location() string {
+	if presence.City != "" {
+		return fmt.Sprintf("%s / %s", presence.CountryName(), presence.City)
+	}
+	return presence.CountryName()
+}
+
 type UserStats struct {
 	Rank      int32
 	Rscore    uint64

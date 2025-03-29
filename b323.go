@@ -224,7 +224,7 @@ func (client *b323) WriteStats(writer io.Writer, info UserInfo) error {
 		writeInt32(writer, info.Stats.Rank)
 		writeString(writer, info.AvatarFilename())
 		writeUint8(writer, uint8(info.Presence.Timezone+24))
-		writeString(writer, info.Presence.City)
+		writeString(writer, info.Presence.Location())
 	}
 
 	client.WriteStatus(writer, info.Status)

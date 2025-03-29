@@ -302,7 +302,7 @@ func (client *b282) WriteStats(writer io.Writer, info UserInfo) error {
 	writeString(writer, info.AvatarFilename())
 	client.WriteStatus(writer, info.Status)
 	writeUint8(writer, uint8(info.Presence.Timezone+24))
-	writeString(writer, info.Presence.City)
+	writeString(writer, info.Presence.Location())
 	return nil
 }
 
