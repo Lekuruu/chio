@@ -20,13 +20,13 @@ import (
 func HandleConnection(stream io.ReadWriteCloser, version int) {
     defer stream.Close()
 
-    io := chio.GetClientInterface(stream, version)
-    io.WriteLoginReply(2)
-    io.WriteUserStats(chio.UserInfo{ ... })
-    io.WriteAnnouncement("Hello, World!")
+    io := chio.GetClientInterface(version)
+    io.WriteLoginReply(stream, 2)
+    io.WriteUserStats(stream, chio.UserInfo{ ... })
+    io.WriteAnnouncement(stream, "Hello, World!")
 
     for {
-        packet, err := client.IO.ReadPacket()
+        packet, err := client.IO.ReadPacket(stream)
         if err != nil {
             fmt.Println("Error reading packet:", err.Error())
             break
