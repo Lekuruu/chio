@@ -24,6 +24,12 @@ type BanchoIO interface {
 	// ImplementsPacket checks if the packetId is implemented in the client
 	ImplementsPacket(packetId uint16) bool
 
+	// ProtocolVerson returns the bancho protocol version used by the client
+	ProtocolVerson() int
+
+	// OverrideProtocolVersion lets you specify a custom bancho protocol version
+	OverrideProtocolVersion(version int)
+
 	// MatchSlotSize returns the number of slots that are used in the match
 	MatchSlotSize() int
 
@@ -129,7 +135,7 @@ func GetClientInterface(clientVersion int) BanchoIO {
 }
 
 func init() {
-	clients[282] = &b282{slotSize: 8}
+	clients[282] = &b282{slotSize: 8, protocolVersion: 0}
 	clients[290] = clients[282]
 	clients[291] = &b291{clients[282].(*b282)}
 	clients[293] = clients[291]

@@ -11,6 +11,7 @@ import (
 type b282 struct {
 	BanchoIO
 	supportedPackets []uint16
+	protocolVersion  int
 	slotSize         int
 }
 
@@ -121,6 +122,14 @@ func (client *b282) ImplementsPacket(packetId uint16) bool {
 		}
 	}
 	return false
+}
+
+func (client *b282) ProtocolVerson() int {
+	return client.protocolVersion
+}
+
+func (client *b282) OverrideProtocolVersion(version int) {
+	client.protocolVersion = version
 }
 
 func (client *b282) MatchSlotSize() int {
