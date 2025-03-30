@@ -141,10 +141,6 @@ func (client *b298) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b298) OverrideMatchSlotSize(amount int) {
-	client.slotSize = amount
-}
-
 func (client *b298) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
 	switch packetId {
 	case OsuSendUserStatus:

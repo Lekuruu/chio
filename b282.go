@@ -123,8 +123,12 @@ func (client *b282) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
+func (client *b282) MatchSlotSize() int {
+	return client.slotSize
+}
+
 func (client *b282) OverrideMatchSlotSize(amount int) {
-	// Multiplayer is not supported in this version
+	client.slotSize = amount
 }
 
 func (client *b282) ConvertInputPacketId(packetId uint16) uint16 {

@@ -24,6 +24,9 @@ type BanchoIO interface {
 	// ImplementsPacket checks if the packetId is implemented in the client
 	ImplementsPacket(packetId uint16) bool
 
+	// MatchSlotSize returns the number of slots that are used in the match
+	MatchSlotSize() int
+
 	// OverrideMatchSlotSize lets you specify a custom amount of slots to read & write to the client
 	OverrideMatchSlotSize(amount int)
 
