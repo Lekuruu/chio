@@ -124,7 +124,7 @@ func (client *b282) ImplementsPacket(packetId uint16) bool {
 	return false
 }
 
-func (client *b282) ProtocolVerson() int {
+func (client *b282) ProtocolVersion() int {
 	return client.protocolVersion
 }
 

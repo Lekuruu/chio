@@ -24,8 +24,8 @@ type BanchoIO interface {
 	// ImplementsPacket checks if the packetId is implemented in the client
 	ImplementsPacket(packetId uint16) bool
 
-	// ProtocolVerson returns the bancho protocol version used by the client
-	ProtocolVerson() int
+	// ProtocolVersion returns the bancho protocol version used by the client
+	ProtocolVersion() int
 
 	// OverrideProtocolVersion lets you specify a custom bancho protocol version
 	OverrideProtocolVersion(version int)
@@ -106,7 +106,7 @@ type BanchoWriters interface {
 var clients map[int]BanchoIO = make(map[int]BanchoIO)
 
 const lowestVersion int = 282
-const highestVersion int = 487
+const highestVersion int = 490
 
 // GetClientInterface returns a BanchoIO interface for the given client version
 func GetClientInterface(clientVersion int) BanchoIO {
@@ -174,4 +174,7 @@ func init() {
 	clients[470] = &b470{clients[452].(*b452)}
 	clients[486] = clients[470]
 	clients[487] = &b487{clients[470].(*b470)}
+	clients[488] = clients[487]
+	clients[489] = &b489{clients[487].(*b487), 1}
+	clients[490] = &b490{clients[489].(*b489)}
 }
