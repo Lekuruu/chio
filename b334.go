@@ -342,12 +342,6 @@ func (client *b334) ReadMatch(reader io.Reader) (*Match, error) {
 }
 
 func (client *b334) WriteScoreFrame(writer io.Writer, frame ScoreFrame) error {
-	if frame.Hp == 0 {
-		// Used by old clients to determine
-		// if the player is passing
-		frame.Hp = 254
-	}
-
 	writeInt32(writer, frame.Time)
 	writeUint8(writer, frame.Id)
 	writeUint16(writer, frame.Total300)
@@ -422,13 +416,6 @@ func (client *b334) ReadScoreFrame(reader io.Reader) (*ScoreFrame, error) {
 	errors.Add(err)
 	frame.Hp, err = readUint8(reader)
 	errors.Add(err)
-
-	if frame.Hp == 254 {
-		// Used by old clients to determine
-		// if the player is passing
-		frame.Hp = 0
-	}
-
 	return frame, errors.Next()
 }
 
