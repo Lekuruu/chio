@@ -412,7 +412,6 @@ func (client *b282) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	errors.Add(err)
 
 	frame.ButtonState = 0
-	frame.LegacyByte = 0
 
 	if mouseLeft {
 		frame.ButtonState |= ButtonStateLeft1

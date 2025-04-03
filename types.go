@@ -113,7 +113,6 @@ type BeatmapInfoRequest struct {
 
 type ReplayFrame struct {
 	ButtonState uint8
-	LegacyByte  uint8
 	MouseX      float32
 	MouseY      float32
 	Time        int32
