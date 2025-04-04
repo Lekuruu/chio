@@ -239,10 +239,6 @@ func readString(r io.Reader) (v string, err error) {
 	}
 
 	l := uleb128.UnmarshalReader(r)
-	if err != nil {
-		return "", err
-	}
-
 	buf := make([]byte, l)
 	_, err = r.Read(buf)
 	if err != nil {
