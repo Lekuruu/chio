@@ -154,6 +154,15 @@ func (client *b535) SupportedPackets() []uint16 {
 	return client.supportedPackets
 }
 
+func (client *b535) ImplementsPacket(packetId uint16) bool {
+	for _, id := range client.SupportedPackets() {
+		if id == packetId {
+			return true
+		}
+	}
+	return false
+}
+
 func (client *b535) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
 	switch packetId {
 	case OsuSendUserStatus:
@@ -197,6 +206,12 @@ func (client *b535) ReadPacketType(packetId uint16, reader io.Reader) (any, erro
 	default:
 		return nil, nil
 	}
+}
+
+func (client *b535) WriteTitleUpdate(stream io.Writer, update TitleUpdate) error {
+	// This is currently only used to refresh the title image, without sending the link
+    // over the packet, i.e. it's still using `/web/osu-title-image.php` under the hood.
+	return client.WritePacket(stream, BanchoTitleUpdate, []byte{})
 }
 
 func (client *b535) ReadMatch(reader io.Reader) (*Match, error) {
