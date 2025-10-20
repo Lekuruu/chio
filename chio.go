@@ -183,4 +183,12 @@ func init() {
 	clients[535] = &b535{clients[504].(*b504), 3}
 	clients[557] = clients[535]
 	clients[558] = &b558{clients[535].(*b535), 4}
+	clients[564] = clients[558]
+	clients[365] = &b365{clients[354].(*b354)}
+	clients[373] = clients[365]
+	clients[374] = &b374{clients[365].(*b365)}
+	clients[590] = clients[558]
+	clients[591] = &b591{clients[558].(*b558)}
+	clients[612] = clients[591]
+	clients[613] = &b613{clients[591].(*b591)}
 }
