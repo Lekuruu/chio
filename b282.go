@@ -13,6 +13,7 @@ type b282 struct {
 	supportedPackets []uint16
 	protocolVersion  int
 	slotSize         int
+	readers          ReaderRegistry
 }
 
 func (client *b282) WritePacket(stream io.Writer, packetId uint16, data []byte) error {
@@ -74,9 +75,14 @@ func (client *b282) ReadPacket(stream io.Reader) (packet *BanchoPacket, err erro
 		return nil, err
 	}
 
-	packet.Data, err = client.ReadPacketType(packet.Id, bytes.NewReader(data))
-	if err != nil {
-		return nil, err
+	reader, ok := client.readers[packet.Id]
+	packet.Data = nil
+
+	if ok {
+		packet.Data, err = reader(client, bytes.NewReader(data))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return packet, nil
@@ -168,21 +174,8 @@ func (client *b282) ConvertOutputPacketId(packetId uint16) uint16 {
 	return packetId
 }
 
-func (client *b282) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
-	switch packetId {
-	case OsuSendUserStatus:
-		return client.ReadStatus(reader)
-	case OsuSendIrcMessage:
-		return client.ReadMessage(reader)
-	case OsuStartSpectating:
-		return readUint32(reader)
-	case OsuSpectateFrames:
-		return client.ReadFrameBundle(reader)
-	case OsuErrorReport:
-		return readString(reader)
-	default:
-		return nil, nil
-	}
+func (client *b282) GetReaders() ReaderRegistry {
+	return client.readers
 }
 
 func (client *b282) WriteLoginReply(stream io.Writer, reply int32) error {
@@ -421,6 +414,33 @@ func (client *b282) ReadReplayFrame(reader io.Reader) (*ReplayFrame, error) {
 	}
 
 	return frame, errors.Next()
+}
+
+func init() {
+	client := &b282{
+		slotSize:        8,
+		protocolVersion: 0,
+		readers:         make(ReaderRegistry),
+	}
+
+	client.readers[OsuSendUserStatus] = func(c BanchoIO, reader io.Reader) (any, error) {
+		return c.(*b282).ReadStatus(reader)
+	}
+	client.readers[OsuSendIrcMessage] = func(c BanchoIO, reader io.Reader) (any, error) {
+		return c.(*b282).ReadMessage(reader)
+	}
+	client.readers[OsuStartSpectating] = func(c BanchoIO, reader io.Reader) (any, error) {
+		return readUint32(reader)
+	}
+	client.readers[OsuSpectateFrames] = func(c BanchoIO, reader io.Reader) (any, error) {
+		return c.(*b282).ReadFrameBundle(reader)
+	}
+	client.readers[OsuErrorReport] = func(c BanchoIO, reader io.Reader) (any, error) {
+		return readString(reader)
+	}
+
+	clients[282] = client
+	clients[290] = client
 }
 
 /* Unsupported Packets */

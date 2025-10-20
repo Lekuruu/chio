@@ -2,7 +2,7 @@ package chio
 
 import "io"
 
-// BanchoPackcet is a struct that represents a packet that
+// BanchoPacket is a struct that represents a packet that
 // is sent or received
 type BanchoPacket struct {
 	Id   uint16
@@ -35,6 +35,9 @@ type BanchoIO interface {
 
 	// OverrideMatchSlotSize lets you specify a custom amount of slots to read & write to the client
 	OverrideMatchSlotSize(amount int)
+
+	// GetReaders returns the packet reader registry
+	GetReaders() ReaderRegistry
 
 	// Packet writers
 	BanchoWriters
@@ -106,7 +109,7 @@ type BanchoWriters interface {
 var clients map[int]BanchoIO = make(map[int]BanchoIO)
 
 const lowestVersion int = 282
-const highestVersion int = 613
+const highestVersion int = 290
 
 // GetClientInterface returns a BanchoIO interface for the given client version
 func GetClientInterface(clientVersion int) BanchoIO {
@@ -132,63 +135,4 @@ func GetClientInterface(clientVersion int) BanchoIO {
 	}
 
 	return nil
-}
-
-func init() {
-	clients[282] = &b282{slotSize: 8, protocolVersion: 0}
-	clients[290] = clients[282]
-	clients[291] = &b291{clients[282].(*b282)}
-	clients[293] = clients[291]
-	clients[294] = &b294{clients[291].(*b291)}
-	clients[295] = clients[294]
-	clients[296] = &b296{clients[294].(*b294)}
-	clients[297] = clients[296]
-	clients[298] = &b298{clients[296].(*b296)}
-	clients[311] = clients[298]
-	clients[312] = &b312{clients[298].(*b298)}
-	clients[319] = clients[312]
-	clients[320] = &b320{clients[312].(*b312)}
-	clients[322] = clients[320]
-	clients[323] = &b323{clients[320].(*b320)}
-	clients[333] = clients[323]
-	clients[334] = &b334{clients[323].(*b323)}
-	clients[337] = clients[334]
-	clients[338] = &b338{clients[334].(*b334)}
-	clients[339] = clients[338]
-	clients[340] = &b340{clients[338].(*b338)}
-	clients[341] = clients[340]
-	clients[342] = &b342{clients[340].(*b340)}
-	clients[348] = clients[342]
-	clients[349] = &b349{clients[342].(*b342)}
-	clients[353] = clients[349]
-	clients[354] = &b354{clients[349].(*b349)}
-	clients[387] = clients[354]
-	clients[388] = &b388{clients[354].(*b354)}
-	clients[401] = clients[388]
-	clients[402] = &b402{clients[388].(*b388)}
-	clients[424] = clients[402]
-	clients[425] = &b425{clients[402].(*b402)}
-	clients[451] = clients[425]
-	clients[452] = &b452{clients[425].(*b425)}
-	clients[469] = clients[452]
-	clients[470] = &b470{clients[452].(*b452)}
-	clients[486] = clients[470]
-	clients[487] = &b487{clients[470].(*b470)}
-	clients[488] = clients[487]
-	clients[489] = &b489{clients[487].(*b487), 1}
-	clients[490] = &b490{clients[489].(*b489)}
-	clients[503] = clients[490]
-	clients[504] = &b504{clients[490].(*b490), 2}
-	clients[534] = clients[504]
-	clients[535] = &b535{clients[504].(*b504), 3}
-	clients[557] = clients[535]
-	clients[558] = &b558{clients[535].(*b535), 4}
-	clients[564] = clients[558]
-	clients[365] = &b365{clients[354].(*b354)}
-	clients[373] = clients[365]
-	clients[374] = &b374{clients[365].(*b365)}
-	clients[590] = clients[558]
-	clients[591] = &b591{clients[558].(*b558)}
-	clients[612] = clients[591]
-	clients[613] = &b613{clients[591].(*b591)}
 }
