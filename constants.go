@@ -150,6 +150,8 @@ const (
 	UserInactive          int32 = -4
 	ServerError           int32 = -5
 	UnauthorizedTestBuild int32 = -6
+	PasswordReset         int32 = -7
+	VerificationRequired  int32 = -8
 )
 
 const (
@@ -293,10 +295,12 @@ const (
 )
 
 const (
-	RankedStatusPending   int8 = 0
-	RankedStatusRanked    int8 = 1
-	RankedStatusApproved  int8 = 2
-	RankedStatusQualified int8 = 3
+	RankedStatusNotSubmitted int8 = -1
+	RankedStatusPending      int8 = 0
+	RankedStatusRanked       int8 = 1
+	RankedStatusApproved     int8 = 2
+	RankedStatusQualified    int8 = 3
+	RankedStatusLoved        int8 = 4
 )
 
 var CountryNames []string = []string{
