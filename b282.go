@@ -89,35 +89,6 @@ func (client *b282) ReadPacket(stream io.Reader) (packet *BanchoPacket, err erro
 }
 
 func (client *b282) SupportedPackets() []uint16 {
-	if client.supportedPackets != nil {
-		return client.supportedPackets
-	}
-
-	client.supportedPackets = []uint16{
-		OsuSendUserStatus,
-		OsuSendIrcMessage,
-		OsuExit,
-		OsuRequestStatusUpdate,
-		OsuPong,
-		BanchoLoginReply,
-		BanchoCommandError,
-		BanchoSendMessage,
-		BanchoPing,
-		BanchoHandleIrcChangeUsername,
-		BanchoHandleIrcQuit,
-		BanchoHandleOsuUpdate,
-		BanchoHandleOsuQuit,
-		BanchoSpectatorJoined,
-		BanchoSpectatorLeft,
-		BanchoSpectateFrames,
-		OsuStartSpectating,
-		OsuStopSpectating,
-		OsuSpectateFrames,
-		BanchoVersionUpdate,
-		OsuErrorReport,
-		OsuCantSpectate,
-		BanchoSpectatorCantSpectate,
-	}
 	return client.supportedPackets
 }
 
@@ -437,6 +408,32 @@ func init() {
 	}
 	client.readers[OsuErrorReport] = func(c BanchoIO, reader io.Reader) (any, error) {
 		return readString(reader)
+	}
+
+	client.supportedPackets = []uint16{
+		OsuSendUserStatus,
+		OsuSendIrcMessage,
+		OsuExit,
+		OsuRequestStatusUpdate,
+		OsuPong,
+		BanchoLoginReply,
+		BanchoCommandError,
+		BanchoSendMessage,
+		BanchoPing,
+		BanchoHandleIrcChangeUsername,
+		BanchoHandleIrcQuit,
+		BanchoHandleOsuUpdate,
+		BanchoHandleOsuQuit,
+		BanchoSpectatorJoined,
+		BanchoSpectatorLeft,
+		BanchoSpectateFrames,
+		OsuStartSpectating,
+		OsuStopSpectating,
+		OsuSpectateFrames,
+		BanchoVersionUpdate,
+		OsuErrorReport,
+		OsuCantSpectate,
+		BanchoSpectatorCantSpectate,
 	}
 
 	clients[282] = client
