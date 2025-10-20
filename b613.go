@@ -60,6 +60,47 @@ func (client *b613) ReadPacket(stream io.Reader) (packet *BanchoPacket, err erro
 	return packet, nil
 }
 
-func (client *b613) ReadChannelLeave(reader io.Reader) (string, error) {
-	return readString(reader)
+func (client *b613) ReadPacketType(packetId uint16, reader io.Reader) (any, error) {
+	switch packetId {
+	case OsuSendUserStatus:
+		return client.ReadStatus(reader)
+	case OsuSendIrcMessage:
+		return client.ReadMessage(reader)
+	case OsuSendIrcMessagePrivate:
+		return client.ReadMessage(reader)
+	case OsuStartSpectating:
+		return readUint32(reader)
+	case OsuSpectateFrames:
+		return client.ReadFrameBundle(reader)
+	case OsuErrorReport:
+		return readString(reader)
+	case OsuMatchCreate:
+		return client.ReadMatch(reader)
+	case OsuMatchJoin:
+		return client.ReadMatchJoin(reader)
+	case OsuMatchChangeSettings:
+		return client.ReadMatch(reader)
+	case OsuMatchChangeSlot:
+		return readUint32(reader)
+	case OsuMatchLock:
+		return readUint32(reader)
+	case OsuMatchScoreUpdate:
+		return client.ReadScoreFrame(reader)
+	case OsuMatchChangeMods:
+		return readUint32(reader)
+	case OsuChannelJoin:
+		return readString(reader)
+	case OsuChannelLeave:
+		return readString(reader)
+	case OsuBeatmapInfoRequest:
+		return client.ReadBeatmapInfoRequest(reader)
+	case OsuMatchTransferHost:
+		return readInt32(reader)
+	case OsuFriendsAdd:
+		return readInt32(reader)
+	case OsuFriendsRemove:
+		return readInt32(reader)
+	default:
+		return nil, nil
+	}
 }
